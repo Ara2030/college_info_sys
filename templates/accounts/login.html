@@ -1,0 +1,50 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Вход — ИС «Колледж»</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+  body { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+  .card-login { width: 100%; max-width: 400px; border: 0; border-radius: 16px; }
+</style>
+</head>
+<body>
+<div class="card card-login shadow-lg p-4">
+  <div class="text-center mb-4">
+    <div style="font-size:42px">🏛</div>
+    <h4 class="mb-0 mt-2">ИС «Колледж»</h4>
+    <div class="text-muted small">Информационная система колледжа (СПО)</div>
+  </div>
+
+  {% if form.errors %}
+  <div class="alert alert-danger py-2 small">Неверный логин или пароль.</div>
+  {% endif %}
+
+  <form method="post" action="{% url 'accounts:login' %}">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+    <div class="mb-3">
+      <label class="form-label small">Логин</label>
+      <input type="text" name="username" class="form-control" autofocus required>
+    </div>
+    <div class="mb-4">
+      <label class="form-label small">Пароль</label>
+      <input type="password" name="password" class="form-control" required>
+    </div>
+    <button type="submit" class="btn btn-primary w-100">Войти</button>
+  </form>
+
+  <div class="text-muted small mt-4">
+    <div class="fw-semibold mb-1">Демо-доступы:</div>
+    <div>admin / admin123 — администратор</div>
+    <div>director / director123 — директор</div>
+    <div>teacher1 / teacher123 — преподаватель</div>
+    <div>student1 / student123 — студент</div>
+    <div>parent1 / parent123 — родитель</div>
+  </div>
+</div>
+</body>
+</html>

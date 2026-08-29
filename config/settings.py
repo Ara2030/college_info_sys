@@ -26,7 +26,16 @@ INSTALLED_APPS = [
     'attestation',         # <-- модуль 2.3 «Промежуточная аттестация»
     'schedule',            # <-- модуль 2.4 «Формирование расписания»
     'hr',                  # <-- модуль 2.5 «Кадровый учёт»
+    'reporting',           # <-- модуль 2.6 «Отчётность и интеграция»
+    'accounts',            # <-- модуль 2.7 «Авторизация и роли»
 ]
+
+# --- Интеграции (модуль 2.6) ---
+# Реестр студентов СПО: REST API (XML)
+REGISTRY_API_ENABLED = False       # True — реальная отправка (нужен доступ к серверу)
+REGISTRY_API_ENDPOINT = 'https://registry.spo.example.ru/api/v1/students'
+# СМЭВ: получение сведений из государственных реестров
+SMEV_ENABLED = False               # True — реальное подключение (транспорт + сертификаты)
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -51,6 +60,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'accounts.context_processors.roles_context',
             ],
         },
     },
@@ -82,6 +92,11 @@ LANGUAGE_CODE = 'ru-ru'
 TIME_ZONE = 'Europe/Moscow'
 USE_I18N = True
 USE_TZ = True
+
+# --- Авторизация (модуль 2.7) ---
+LOGIN_URL = '/accounts/login/'
+LOGIN_REDIRECT_URL = '/accounts/profile/'
+LOGOUT_REDIRECT_URL = '/accounts/login/'
 
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static'] if (BASE_DIR / 'static').exists() else []

@@ -22,6 +22,9 @@ from .models import (AcademicDebt, Exam, ExamResult, ScholarshipPeriod)
 from .services import (build_schedule, build_scholarship_list, create_exam_results,
                        generate_debt_order, sync_debts_from_exam)
 
+from accounts.access import RoleRequiredMixin
+from accounts.roles import ATTESTATION_EDIT, ATTESTATION_MGMT
+
 
 # ---------------- Расписание ----------------
 
@@ -49,7 +52,8 @@ class ExamListView(ListView):
         return ctx
 
 
-class ExamCreateView(CreateView):
+class ExamCreateView(RoleRequiredMixin, CreateView):
+    roles = ATTESTATION_EDIT
     model = Exam
     form_class = ExamForm
     template_name = 'attestation/exam_form.html'
@@ -69,15 +73,17 @@ class ExamCreateView(CreateView):
         return redirect('attestation:exam_detail', pk=exam.pk)
 
 
-class ExamUpdateView(UpdateView):
+class ExamUpdateView(RoleRequiredMixin, UpdateView):
+    roles = ATTESTATION_EDIT
     model = Exam
     form_class = ExamForm
     template_name = 'attestation/exam_form.html'
     success_url = reverse_lazy('attestation:exam_list')
 
 
-class ExamDetailView(DetailView):
+class ExamDetailView(RoleRequiredMixin, DetailView):
     """Ведомость: результаты студентов + внесение оценок."""
+    roles = ATTESTATION_EDIT
     model = Exam
     template_name = 'attestation/exam_detail.html'
     context_object_name = 'exam'
@@ -144,8 +150,9 @@ class ExamPrintView(DetailView):
         return ctx
 
 
-class ScheduleBuildView(TemplateView):
+class ScheduleBuildView(RoleRequiredMixin, TemplateView):
     """Автоматическое построение расписания с учётом ограничений."""
+    roles = ATTESTATION_EDIT
     template_name = 'attestation/schedule_build.html'
 
     def get_context_data(self, **kwargs):
@@ -175,8 +182,9 @@ class ScheduleBuildView(TemplateView):
 
 # ---------------- Академические задолженности ----------------
 
-class DebtListView(ListView):
+class DebtListView(RoleRequiredMixin, ListView):
     """Журнал академических задолженностей."""
+    roles = ATTESTATION_MGMT
     model = AcademicDebt
     template_name = 'attestation/debt_list.html'
     context_object_name = 'debts'
@@ -198,8 +206,9 @@ class DebtListView(ListView):
         return ctx
 
 
-class DebtGenerateOrderView(View):
+class DebtGenerateOrderView(RoleRequiredMixin, View):
     """Автоматическое формирование приказа об академических задолженностях."""
+    roles = ATTESTATION_MGMT
 
     def post(self, request):
         try:
@@ -213,8 +222,9 @@ class DebtGenerateOrderView(View):
             return redirect('attestation:debt_list')
 
 
-class DebtClearView(View):
+class DebtClearView(RoleRequiredMixin, View):
     """Отметить задолженность как ликвидированную."""
+    roles = ATTESTATION_MGMT
 
     def post(self, request, pk):
         debt = get_object_or_404(AcademicDebt, pk=pk)
@@ -227,15 +237,17 @@ class DebtClearView(View):
 
 # ---------------- Стипендия ----------------
 
-class ScholarshipListView(ListView):
+class ScholarshipListView(RoleRequiredMixin, ListView):
     """Стипендиальные периоды."""
+    roles = ATTESTATION_MGMT
     model = ScholarshipPeriod
     template_name = 'attestation/scholarship_list.html'
     context_object_name = 'periods'
 
 
-class ScholarshipCreateView(TemplateView):
+class ScholarshipCreateView(RoleRequiredMixin, TemplateView):
     """Формирование списка студентов, имеющих право на стипендию."""
+    roles = ATTESTATION_MGMT
     template_name = 'attestation/scholarship_form.html'
 
     def get_context_data(self, **kwargs):

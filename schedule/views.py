@@ -19,6 +19,9 @@ from .models import (DAY_CHOICES, SLOT_TIMES, Curriculum, Room, ScheduleEntry,
                      Teacher, TeacherUnavailable, WEEK_TYPE_CHOICES)
 from .services import auto_build, check_all_conflicts
 
+from accounts.access import RoleRequiredMixin
+from accounts.roles import SCHEDULE_EDIT
+
 
 def _grid(entries, week_type=None):
     """Сетка расписания: {day: {slot: entry}}."""
@@ -99,8 +102,9 @@ class TeacherScheduleView(DetailView):
         return ctx
 
 
-class EntryCreateView(CreateView):
+class EntryCreateView(RoleRequiredMixin, CreateView):
     """Создание занятия (с проверкой конфликтов)."""
+    roles = SCHEDULE_EDIT
     model = ScheduleEntry
     form_class = ScheduleEntryForm
     template_name = 'schedule/entry_form.html'
@@ -121,8 +125,9 @@ class EntryCreateView(CreateView):
         return redirect(self.get_success_url())
 
 
-class EntryReplaceView(View):
+class EntryReplaceView(RoleRequiredMixin, View):
     """Оперативная корректировка: замена преподавателя / аудитории."""
+    roles = SCHEDULE_EDIT
 
     def get(self, request, pk):
         entry = get_object_or_404(ScheduleEntry, pk=pk)
@@ -152,8 +157,9 @@ class EntryReplaceView(View):
                       {'entry': entry, 'form': form})
 
 
-class ScheduleBuildView(TemplateView):
+class ScheduleBuildView(RoleRequiredMixin, TemplateView):
     """Автопостроение расписания из учебного плана."""
+    roles = SCHEDULE_EDIT
     template_name = 'schedule/build.html'
 
     def get_context_data(self, **kwargs):
@@ -188,8 +194,9 @@ class ConflictsView(TemplateView):
         return ctx
 
 
-class EntryPublishView(View):
+class EntryPublishView(RoleRequiredMixin, View):
     """Публикация / снятие с публикации занятия."""
+    roles = SCHEDULE_EDIT
 
     def post(self, request, pk):
         entry = get_object_or_404(ScheduleEntry, pk=pk)

@@ -12,6 +12,9 @@ from .models import (Student, Group, Order, OrderItem, StudentStatus,
                      Department, Specialty, RegistryExport)
 from .services.orders import post_order
 
+from accounts.access import RoleRequiredMixin
+from accounts.roles import CONTINGENT_EDIT
+
 
 # ---------------- Дашборд ----------------
 
@@ -86,7 +89,8 @@ class StudentListView(ListView):
         return ctx
 
 
-class StudentCreateView(CreateView):
+class StudentCreateView(RoleRequiredMixin, CreateView):
+    roles = CONTINGENT_EDIT
     model = Student
     form_class = StudentForm
     template_name = 'contingent/student_form.html'
@@ -97,7 +101,8 @@ class StudentCreateView(CreateView):
         return super().form_valid(form)
 
 
-class StudentUpdateView(UpdateView):
+class StudentUpdateView(RoleRequiredMixin, UpdateView):
+    roles = CONTINGENT_EDIT
     model = Student
     form_class = StudentForm
     template_name = 'contingent/student_form.html'
@@ -123,7 +128,8 @@ class StudentDetailView(DetailView):
         return ctx
 
 
-class StudentDeleteView(DeleteView):
+class StudentDeleteView(RoleRequiredMixin, DeleteView):
+    roles = CONTINGENT_EDIT
     model = Student
     template_name = 'contingent/student_confirm_delete.html'
     success_url = reverse_lazy('contingent:student_list')
@@ -150,14 +156,16 @@ class GroupListView(ListView):
                              .order_by('name'))
 
 
-class GroupCreateView(CreateView):
+class GroupCreateView(RoleRequiredMixin, CreateView):
+    roles = CONTINGENT_EDIT
     model = Group
     form_class = GroupForm
     template_name = 'contingent/group_form.html'
     success_url = reverse_lazy('contingent:group_list')
 
 
-class GroupUpdateView(UpdateView):
+class GroupUpdateView(RoleRequiredMixin, UpdateView):
+    roles = CONTINGENT_EDIT
     model = Group
     form_class = GroupForm
     template_name = 'contingent/group_form.html'
@@ -176,7 +184,8 @@ class GroupDetailView(DetailView):
         return ctx
 
 
-class GroupDeleteView(DeleteView):
+class GroupDeleteView(RoleRequiredMixin, DeleteView):
+    roles = CONTINGENT_EDIT
     """Удаление группы (запрещено, пока в группе есть студенты)."""
     model = Group
     template_name = 'contingent/group_confirm_delete.html'
@@ -213,8 +222,9 @@ class OrderListView(ListView):
                              .order_by('-date', '-number'))
 
 
-class OrderCreateView(CreateView):
+class OrderCreateView(RoleRequiredMixin, CreateView):
     """Создание приказа: реквизиты + формсет пунктов (студенты и действия)."""
+    roles = CONTINGENT_EDIT
     model = Order
     form_class = OrderForm
     template_name = 'contingent/order_form.html'
@@ -251,8 +261,9 @@ class OrderDetailView(DetailView):
         return ctx
 
 
-class OrderPostView(View):
+class OrderPostView(RoleRequiredMixin, View):
     """Проведение приказа: обновление статусов + запись журнала движения."""
+    roles = CONTINGENT_EDIT
 
     def post(self, request, pk):
         order = get_object_or_404(Order, pk=pk)

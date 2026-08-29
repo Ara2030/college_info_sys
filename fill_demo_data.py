@@ -393,6 +393,73 @@ if not HROrder.objects.exists():
         apply_hr_order(order)
         order_created += 1
 
+# ==========================================================================
+# Модуль 2.6 «Отчётность и интеграция»: отчёты, REST API, СМЭВ
+# ==========================================================================
+from contingent.models import RegistryExport  # noqa: E402
+from reporting.models import StatReport, IntegrationLog, SmevRequest  # noqa: E402
+from reporting.services import (build_stat_report, send_to_registry_api,  # noqa: E402
+                                smev_request)
+
+# Статистические отчёты
+reports_created = 0
+if not StatReport.objects.exists():
+    for rtype in (StatReport.Type.SPO1, StatReport.Type.SPO2,
+                  StatReport.Type.MONITORING):
+        build_stat_report(rtype, period_year=2026)
+        reports_created += 1
+
+# REST API Реестра СПО: отправка последней выгрузки (протокольный режим)
+api_logs_created = 0
+last_export = RegistryExport.objects.order_by('-id').first()
+if last_export and not IntegrationLog.objects.filter(
+        integration='registry_api').exists():
+    log = send_to_registry_api(last_export.xml_file.read())
+    api_logs_created = 1
+
+# СМЭВ: запросы сведений (без подключения — фиксируются)
+smev_created = 0
+if not SmevRequest.objects.exists():
+    smev_request('pfr', '123-456-789 01', 'Иванов Иван Иванович')
+    smev_request('fns', '770000000000')
+    smev_created = 2
+
+# ==========================================================================
+# Модуль 2.7 «Авторизация и роли»: группы, пользователи, профили
+# ==========================================================================
+from django.contrib.auth.models import Group, User  # noqa: E402
+from accounts.models import UserProfile  # noqa: E402
+from accounts.roles import ALL_ROLES, ROLE_LABELS  # noqa: E402
+
+# Группы-роли
+roles_created = 0
+for role in ALL_ROLES:
+    g, was = Group.objects.get_or_create(name=role)
+    if was:
+        roles_created += 1
+
+# Демо-пользователи
+def _make_user(username, password, role, **profile_kwargs):
+    u, was = User.objects.get_or_create(username=username)
+    u.set_password(password)
+    u.is_staff = role in ('director', 'deputy', 'methodist')
+    u.save()
+    u.groups.set([Group.objects.get(name=role)])
+    UserProfile.objects.get_or_create(user=u, defaults=profile_kwargs)
+    return was
+
+users_created = 0
+director = Employee.objects.filter(position='Директор').first()
+teacher_emp = Employee.objects.filter(category='teacher').first()
+first_student = Student.objects.order_by('pk').first()
+
+users_created += _make_user('director', 'director123', 'director', employee=director)
+users_created += _make_user('methodist', 'methodist123', 'methodist')
+users_created += _make_user('teacher1', 'teacher123', 'teacher', employee=teacher_emp)
+users_created += _make_user('student1', 'student123', 'student', student=first_student)
+users_created += _make_user('parent1', 'parent123', 'parent', parent_of=first_student)
+
+# --- итоговый вывод ---
 print(f'Готово: отделений={Department.objects.count()}, '
       f'специальностей={Specialty.objects.count()}, '
       f'групп={Group.objects.count()}, '
@@ -418,4 +485,9 @@ print(f'Готово: отделений={Department.objects.count()}, '
       f'единиц={StaffingUnit.objects.count()}, '
       f'тарификация: {tar_period.name} — {tar_period.items.count()} строк (создано: {tar_created}), '
       f'выгрузок 1С={SalaryExport.objects.count()} (создано: {export_created}), '
-      f'приказов={HROrder.objects.count()} (создано: {order_created})')
+      f'приказов={HROrder.objects.count()} (создано: {order_created}), '
+      f'статотчётов={StatReport.objects.count()} (создано: {reports_created}), '
+      f'записей интеграций={IntegrationLog.objects.count()} (создано: {api_logs_created}), '
+      f'запросов СМЭВ={SmevRequest.objects.count()} (создано: {smev_created}), '
+      f'ролей={Group.objects.filter(name__in=ALL_ROLES).count()} (создано: {roles_created}), '
+      f'демо-пользователей={User.objects.filter(username__in=["director","methodist","teacher1","student1","parent1"]).count()} (создано: {users_created})')

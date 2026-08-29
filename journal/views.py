@@ -20,6 +20,9 @@ from .services import (group_report, low_performance_students,
                        student_average_grade, student_attendance_percent,
                        student_is_low_performance)
 
+from accounts.access import RoleRequiredMixin
+from accounts.roles import JOURNAL_EDIT, LOW_PERF_VIEW
+
 
 # ---------------- Журналы занятий ----------------
 
@@ -53,8 +56,9 @@ class JournalGroupView(DetailView):
         return ctx
 
 
-class LessonCreateView(CreateView):
+class LessonCreateView(RoleRequiredMixin, CreateView):
     """Создание занятия с отметками оценок и посещаемости."""
+    roles = JOURNAL_EDIT
     model = Lesson
     form_class = LessonForm
     template_name = 'journal/lesson_form.html'
@@ -137,8 +141,9 @@ class LessonDetailView(DetailView):
         return ctx
 
 
-class LessonUpdateView(UpdateView):
+class LessonUpdateView(RoleRequiredMixin, UpdateView):
     """Редактирование занятия и отметок."""
+    roles = JOURNAL_EDIT
     model = Lesson
     form_class = LessonForm
     template_name = 'journal/lesson_form.html'
@@ -215,11 +220,12 @@ class StudentProgressView(DetailView):
         return ctx
 
 
-class LowPerformanceView(TemplateView):
+class LowPerformanceView(RoleRequiredMixin, TemplateView):
     """Уведомления преподавателей: студенты с низкой успеваемостью.
 
     Критерии (ТЗ): посещаемость < 60% ИЛИ средний балл < 3,5.
     """
+    roles = LOW_PERF_VIEW
     template_name = 'journal/low_performance.html'
 
     def get_context_data(self, **kwargs):

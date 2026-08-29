@@ -1,0 +1,47 @@
+{% extends 'contingent/base.html' %}
+{% block title %}Статистические отчёты{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h3 class="mb-0">Статистические отчёты</h3>
+  <a href="{% url 'reporting:stat_create' %}" class="btn btn-primary">+ Сформировать отчёт</a>
+</div>
+
+<div class="card p-3 mb-3">
+  <form method="get" class="row g-2 align-items-end">
+    <div class="col-auto">
+      <label class="form-label small mb-1">Тип отчёта</label>
+      <select name="type" class="form-select form-select-sm" onchange="this.form.submit()">
+        <option value="">Все</option>
+        <option value="spo1" {% if selected_type == 'spo1' %}selected{% endif %}>СПО-1</option>
+        <option value="spo2" {% if selected_type == 'spo2' %}selected{% endif %}>СПО-2</option>
+        <option value="monitoring" {% if selected_type == 'monitoring' %}selected{% endif %}>Мониторинг</option>
+      </select>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead><tr><th>Отчёт</th><th>Год</th><th>Дата среза</th><th>Статус</th><th class="text-end">Действия</th></tr></thead>
+      <tbody>
+        {% for r in reports %}
+        <tr>
+          <td class="fw-semibold">{{ r.get_report_type_display }}</td>
+          <td>{{ r.period_year }}</td>
+          <td>{{ r.period_date|date:'d.m.Y' }}</td>
+          <td><span class="badge bg-success">{{ r.get_status_display }}</span></td>
+          <td class="text-end text-nowrap">
+            <a href="{% url 'reporting:stat_detail' r.pk %}" class="btn btn-sm btn-outline-primary">Открыть</a>
+            <a href="{% url 'reporting:stat_excel' r.pk %}" class="btn btn-sm btn-outline-success">Excel</a>
+            <a href="{% url 'reporting:stat_pdf' r.pk %}" class="btn btn-sm btn-outline-danger">PDF</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-center text-muted py-4">Отчёты не сформированы</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

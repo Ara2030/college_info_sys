@@ -1,0 +1,67 @@
+{% extends 'contingent/base.html' %}
+{% block title %}СМЭВ — государственные реестры{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h3 class="mb-0">Интеграция с СМЭВ</h3>
+  <a href="{% url 'reporting:dashboard' %}" class="btn btn-outline-secondary">← Отчётность</a>
+</div>
+
+<div class="alert alert-info small">
+  Получение сведений из государственных реестров (ФНС, СФР, ЗАГС, МВД) через
+  транспортную подсистему СМЭВ. Подключение настраивается в
+  <code>settings.SMEV_ENABLED</code>. Без подключения запросы фиксируются
+  со статусом «Подключение не настроено».
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-5">
+    <div class="card p-4">
+      <h6 class="text-primary mb-3">Запрос сведений</h6>
+      <form method="post">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div class="mb-3">
+          <label class="form-label" for="{{ form.registry.id_for_label }}">Реестр</label>
+          {{ form.registry }}
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="{{ form.identifier.id_for_label }}">Идентификатор (СНИЛС/ИНН/паспорт)</label>
+          {{ form.identifier }}
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="{{ form.person_name.id_for_label }}">ФИО (необязательно)</label>
+          {{ form.person_name }}
+        </div>
+        <button type="submit" class="btn btn-primary w-100">🔗 Отправить запрос</button>
+      </form>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="card p-3">
+      <h6 class="text-primary mb-3">Журнал запросов</h6>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead><tr><th>Дата</th><th>Реестр</th><th>Идентификатор</th><th>Статус</th><th>Ответ</th></tr></thead>
+          <tbody>
+            {% for r in requests %}
+            <tr>
+              <td class="text-nowrap">{{ r.request_date|date:'d.m.Y H:i' }}</td>
+              <td>{{ r.get_registry_display }}</td>
+              <td>{{ r.identifier }}</td>
+              <td>
+                {% if r.status == 'connected' %}<span class="badge bg-success">Сведения получены</span>
+                {% elif r.status == 'no_connection' %}<span class="badge bg-warning text-dark">Нет подключения</span>
+                {% else %}<span class="badge bg-danger">Ошибка</span>{% endif %}
+              </td>
+              <td class="text-muted small" style="max-width:260px;">{{ r.response_text|truncatechars:90 }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-center text-muted py-3">Запросов не было</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

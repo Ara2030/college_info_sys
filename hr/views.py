@@ -19,10 +19,14 @@ from .models import (Employee, HROrder, SalaryExport, StaffPosition,
 from .services import (apply_hr_order, build_salary_export,
                        build_tarification_from_curriculum)
 
+from accounts.access import RoleRequiredMixin
+from accounts.roles import HR_MGMT, HR_VIEW
+
 
 # ---------------- Дашборд кадров ----------------
 
-class HrDashboardView(TemplateView):
+class HrDashboardView(RoleRequiredMixin, TemplateView):
+    roles = HR_VIEW
     template_name = 'hr/dashboard.html'
 
     def get_context_data(self, **kwargs):
@@ -46,7 +50,8 @@ class HrDashboardView(TemplateView):
 
 # ---------------- Сотрудники (Т-2) ----------------
 
-class EmployeeListView(ListView):
+class EmployeeListView(RoleRequiredMixin, ListView):
+    roles = HR_VIEW
     model = Employee
     template_name = 'hr/employee_list.html'
     context_object_name = 'employees'
@@ -71,15 +76,17 @@ class EmployeeListView(ListView):
         return ctx
 
 
-class EmployeeCreateView(CreateView):
+class EmployeeCreateView(RoleRequiredMixin, CreateView):
+    roles = HR_MGMT
     model = Employee
     form_class = EmployeeForm
     template_name = 'hr/employee_form.html'
     success_url = reverse_lazy('hr:employee_list')
 
 
-class EmployeeDetailView(DetailView):
+class EmployeeDetailView(RoleRequiredMixin, DetailView):
     """Личная карточка сотрудника (форма Т-2)."""
+    roles = HR_VIEW
     model = Employee
     template_name = 'hr/employee_detail.html'
     context_object_name = 'employee'
@@ -94,15 +101,17 @@ class EmployeeDetailView(DetailView):
         return ctx
 
 
-class EmployeeUpdateView(UpdateView):
+class EmployeeUpdateView(RoleRequiredMixin, UpdateView):
+    roles = HR_MGMT
     model = Employee
     form_class = EmployeeForm
     template_name = 'hr/employee_form.html'
     success_url = reverse_lazy('hr:employee_list')
 
 
-class EmployeeCardView(DetailView):
+class EmployeeCardView(RoleRequiredMixin, DetailView):
     """Печатная форма карточки Т-2."""
+    roles = HR_VIEW
     model = Employee
     template_name = 'hr/employee_card.html'
     context_object_name = 'employee'
@@ -110,8 +119,9 @@ class EmployeeCardView(DetailView):
 
 # ---------------- Штатное расписание ----------------
 
-class StaffingView(TemplateView):
+class StaffingView(RoleRequiredMixin, TemplateView):
     """Штатное расписание: должности, занятые ставки, вакансии."""
+    roles = HR_VIEW
     template_name = 'hr/staffing.html'
 
     def get_context_data(self, **kwargs):
@@ -123,7 +133,8 @@ class StaffingView(TemplateView):
         return ctx
 
 
-class StaffPositionCreateView(CreateView):
+class StaffPositionCreateView(RoleRequiredMixin, CreateView):
+    roles = HR_MGMT
     model = StaffPosition
     form_class = StaffPositionForm
     template_name = 'hr/position_form.html'
@@ -132,13 +143,15 @@ class StaffPositionCreateView(CreateView):
 
 # ---------------- Тарификация ----------------
 
-class TarificationListView(ListView):
+class TarificationListView(RoleRequiredMixin, ListView):
+    roles = HR_MGMT
     model = TarificationPeriod
     template_name = 'hr/tarification_list.html'
     context_object_name = 'periods'
 
 
-class TarificationCreateView(CreateView):
+class TarificationCreateView(RoleRequiredMixin, CreateView):
+    roles = HR_MGMT
     model = TarificationPeriod
     form_class = TarificationPeriodForm
     template_name = 'hr/tarification_form.html'
@@ -156,7 +169,8 @@ class TarificationCreateView(CreateView):
         return redirect('hr:tarification_detail', pk=period.pk)
 
 
-class TarificationDetailView(DetailView):
+class TarificationDetailView(RoleRequiredMixin, DetailView):
+    roles = HR_MGMT
     model = TarificationPeriod
     template_name = 'hr/tarification_detail.html'
     context_object_name = 'period'
@@ -176,7 +190,8 @@ class TarificationDetailView(DetailView):
         return ctx
 
 
-class TarificationItemCreateView(CreateView):
+class TarificationItemCreateView(RoleRequiredMixin, CreateView):
+    roles = HR_MGMT
     model = TarificationItem
     form_class = TarificationItemForm
     template_name = 'hr/tarification_item_form.html'
@@ -200,14 +215,16 @@ class TarificationItemCreateView(CreateView):
 
 # ---------------- Выгрузка в 1С:Зарплата ----------------
 
-class SalaryExportListView(ListView):
+class SalaryExportListView(RoleRequiredMixin, ListView):
+    roles = HR_MGMT
     model = SalaryExport
     template_name = 'hr/salary_list.html'
     context_object_name = 'exports'
 
 
-class SalaryExportCreateView(TemplateView):
+class SalaryExportCreateView(RoleRequiredMixin, TemplateView):
     """Формирование выгрузки в 1С:Зарплата по периоду тарификации."""
+    roles = HR_MGMT
     template_name = 'hr/salary_form.html'
 
     def get_context_data(self, **kwargs):
@@ -229,7 +246,9 @@ class SalaryExportCreateView(TemplateView):
         return redirect('hr:salary_list')
 
 
-class SalaryExportDownloadView(View):
+class SalaryExportDownloadView(RoleRequiredMixin, View):
+    roles = HR_MGMT
+
     def get(self, request, pk):
         export = get_object_or_404(SalaryExport, pk=pk)
         if not export.json_file:
@@ -240,7 +259,8 @@ class SalaryExportDownloadView(View):
 
 # ---------------- Приказы по личному составу ----------------
 
-class HROrderListView(ListView):
+class HROrderListView(RoleRequiredMixin, ListView):
+    roles = HR_MGMT
     model = HROrder
     template_name = 'hr/order_list.html'
     context_object_name = 'orders'
@@ -259,7 +279,8 @@ class HROrderListView(ListView):
         return ctx
 
 
-class HROrderCreateView(CreateView):
+class HROrderCreateView(RoleRequiredMixin, CreateView):
+    roles = HR_MGMT
     model = HROrder
     form_class = HROrderForm
     template_name = 'hr/order_form.html'
@@ -279,13 +300,15 @@ class HROrderCreateView(CreateView):
         return redirect('hr:order_detail', pk=self.object.pk)
 
 
-class HROrderDetailView(DetailView):
+class HROrderDetailView(RoleRequiredMixin, DetailView):
+    roles = HR_MGMT
     model = HROrder
     template_name = 'hr/order_detail.html'
     context_object_name = 'order'
 
 
-class HROrderPrintView(DetailView):
+class HROrderPrintView(RoleRequiredMixin, DetailView):
+    roles = HR_MGMT
     model = HROrder
     template_name = 'hr/order_print.html'
     context_object_name = 'order'

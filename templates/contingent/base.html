@@ -4,16 +4,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% block title %}ИС «Колледж» — Контингент студентов{% endblock %}</title>
+<title>{% block title %}ИС «Колледж»{% endblock %}</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <style>
   body { background: #f1f5f9; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  .sidebar { width: 250px; min-height: 100vh; background: #0f172a; padding: 20px 14px; }
+  .sidebar { width: 250px; min-height: 100vh; background: #0f172a; padding: 20px 14px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
   .sidebar .brand { color: #fff; font-weight: 700; font-size: 17px; }
   .sidebar .brand small { color: #64748b; font-weight: 400; font-size: 12px; }
   .sidebar a { color: #94a3b8; text-decoration: none; display: block; padding: 9px 12px; border-radius: 8px; margin-bottom: 4px; }
   .sidebar a:hover { background: #1e293b; color: #fff; }
   .sidebar a.active { background: #2563eb; color: #fff; font-weight: 600; }
+  .sidebar .group-label { color: #475569; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; margin: 14px 12px 4px; }
+  .topbar { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 10px 28px; display: flex; justify-content: space-between; align-items: center; }
   .content { padding: 24px 28px; flex: 1; min-width: 0; }
   .card { border: 0; border-radius: 12px; box-shadow: 0 1px 3px rgba(15, 23, 42, .08); }
   .table thead th { font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; color: #64748b; }
@@ -22,31 +24,76 @@
 <body>
 <div class="d-flex">
   <aside class="sidebar">
-    <div class="brand">🏛 Колледж<small class="d-block">ИС «Контингент студентов»</small></div>
-    <nav class="mt-4">
-      <a href="{% url 'contingent:dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">📊 Дашборд</a>
-      <a href="{% url 'contingent:student_list' %}" class="{% if 'student' in request.resolver_match.url_name %}active{% endif %}">👥 Студенты</a>
-      <a href="{% url 'contingent:group_list' %}" class="{% if 'group' in request.resolver_match.url_name %}active{% endif %}">🎓 Группы</a>
-      <a href="{% url 'contingent:order_list' %}" class="{% if 'order' in request.resolver_match.url_name %}active{% endif %}">📜 Приказы</a>
-      <a href="{% url 'journal:group_list' %}" class="{% if 'journal' in request.resolver_match.namespace %}active{% endif %}">📓 Журнал</a>
-      <a href="{% url 'attestation:exam_list' %}" class="{% if 'attestation' in request.resolver_match.namespace and request.resolver_match.url_name != 'low_performance' %}active{% endif %}">📝 Аттестация</a>
-      <a href="{% url 'schedule:group_list' %}" class="{% if 'schedule' in request.resolver_match.namespace %}active{% endif %}">🗓 Расписание</a>
-      <a href="{% url 'hr:dashboard' %}" class="{% if 'hr' in request.resolver_match.namespace %}active{% endif %}">👔 Кадры</a>
-      <a href="{% url 'journal:low_performance' %}" class="{% if request.resolver_match.url_name == 'low_performance' %}active{% endif %}">⚠ Уведомления</a>
-      <a href="{% url 'contingent:export_list' %}" class="{% if 'export' in request.resolver_match.url_name %}active{% endif %}">🔄 Выгрузка в Реестр СПО</a>
+    <div class="brand">🏛 Колледж<small class="d-block">ИС «Колледж» (СПО)</small></div>
+    <nav class="mt-3">
+      <a href="{% url 'accounts:profile' %}" class="{% if request.resolver_match.url_name == 'profile' %}active{% endif %}">👤 Личный кабинет</a>
+
+      {% if user.is_authenticated %}
+        {% if can_manage_contingent or user.is_superuser %}
+        <div class="group-label">Контингент</div>
+        <a href="{% url 'contingent:dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">📊 Дашборд</a>
+        <a href="{% url 'contingent:student_list' %}" class="{% if 'student' in request.resolver_match.url_name %}active{% endif %}">👥 Студенты</a>
+        <a href="{% url 'contingent:group_list' %}" class="{% if 'group' in request.resolver_match.url_name %}active{% endif %}">🎓 Группы</a>
+        <a href="{% url 'contingent:order_list' %}" class="{% if 'order' in request.resolver_match.url_name %}active{% endif %}">📜 Приказы</a>
+        <a href="{% url 'contingent:export_list' %}" class="{% if 'export' in request.resolver_match.url_name %}active{% endif %}">🔄 Реестр СПО (XML)</a>
+        {% endif %}
+
+        {% if can_edit_journal or user.is_superuser %}
+        <div class="group-label">Учебный процесс</div>
+        <a href="{% url 'journal:group_list' %}" class="{% if 'journal' in request.resolver_match.namespace %}active{% endif %}">📓 Журнал</a>
+        {% endif %}
+
+        {% if can_edit_attestation or user.is_superuser %}
+        <a href="{% url 'attestation:exam_list' %}" class="{% if 'attestation' in request.resolver_match.namespace and request.resolver_match.url_name != 'low_performance' %}active{% endif %}">📝 Аттестация</a>
+        {% endif %}
+
+        {% if can_view_low_perf or user.is_superuser %}
+        <a href="{% url 'journal:low_performance' %}" class="{% if request.resolver_match.url_name == 'low_performance' %}active{% endif %}">⚠ Уведомления</a>
+        {% endif %}
+
+        <div class="group-label">Портал</div>
+        <a href="{% url 'schedule:group_list' %}" class="{% if 'schedule' in request.resolver_match.namespace %}active{% endif %}">🗓 Расписание</a>
+
+        {% if can_view_hr or user.is_superuser %}
+        <div class="group-label">Администрирование</div>
+        <a href="{% url 'hr:dashboard' %}" class="{% if 'hr' in request.resolver_match.namespace %}active{% endif %}">👔 Кадры</a>
+        {% endif %}
+
+        {% if can_edit_reporting or user.is_superuser %}
+        <a href="{% url 'reporting:dashboard' %}" class="{% if 'reporting' in request.resolver_match.namespace %}active{% endif %}">📊 Отчётность</a>
+        {% endif %}
+      {% endif %}
     </nav>
   </aside>
-  <main class="content">
-    {% if messages %}
-      {% for message in messages %}
-        <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'warning' %}warning{% else %}success{% endif %} alert-dismissible fade show" role="alert">
-          {{ message }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
-        </div>
-      {% endfor %}
-    {% endif %}
-    {% block content %}{% endblock %}
-  </main>
+  <div class="flex-grow-1" style="min-width:0">
+    <div class="topbar">
+      <div class="text-muted small">Информационная система колледжа (СПО)</div>
+      <div class="d-flex align-items-center gap-3">
+        {% if user.is_authenticated %}
+        <span class="small">👤 <b>{{ user.username }}</b>
+          {% if user.is_superuser %}<span class="badge bg-danger ms-1">Администратор</span>{% endif %}
+        </span>
+        <form method="post" action="{% url 'accounts:logout' %}" class="m-0">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-sm btn-outline-secondary">Выйти</button>
+        </form>
+        {% else %}
+        <a href="{% url 'accounts:login' %}" class="btn btn-sm btn-primary">Войти</a>
+        {% endif %}
+      </div>
+    </div>
+    <main class="content">
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'warning' %}warning{% else %}success{% endif %} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
