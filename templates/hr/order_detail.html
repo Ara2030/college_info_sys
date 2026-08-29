@@ -1,0 +1,25 @@
+{% extends 'contingent/base.html' %}
+{% block title %}Приказ №{{ order.number }}{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h3 class="mb-0">Приказ №{{ order.number }} от {{ order.date|date:'d.m.Y' }}</h3>
+  <div class="d-flex gap-2">
+    <a href="{% url 'hr:order_print' order.pk %}" class="btn btn-outline-secondary">🖨 Печать</a>
+    <a href="{% url 'hr:order_list' %}" class="btn btn-outline-secondary">← Приказы</a>
+  </div>
+</div>
+
+<div class="card p-4">
+  <table class="table table-sm mb-0">
+    <tr><th class="text-muted fw-normal" style="width:220px">Тип</th>
+      <td>{% if order.order_type == 'hire' %}<span class="badge bg-success">Приём на работу</span>
+        {% elif order.order_type == 'transfer' %}<span class="badge bg-info text-dark">Перевод</span>
+        {% else %}<span class="badge bg-danger">Увольнение</span>{% endif %}</td></tr>
+    <tr><th class="text-muted fw-normal">Сотрудник</th>
+      <td><a href="{% url 'hr:employee_detail' order.employee.pk %}" class="text-decoration-none">{{ order.employee.full_name }}</a></td></tr>
+    <tr><th class="text-muted fw-normal">Должность</th><td>{{ order.position|default:order.employee.position }}</td></tr>
+    <tr><th class="text-muted fw-normal">Основание</th><td>{{ order.basis|default:'—' }}</td></tr>
+    <tr><th class="text-muted fw-normal">Текст приказа</th><td>{{ order.text|default:'—' }}</td></tr>
+  </table>
+</div>
+{% endblock %}

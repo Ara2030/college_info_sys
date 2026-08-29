@@ -31,6 +31,7 @@
       <a href="{% url 'journal:group_list' %}" class="{% if 'journal' in request.resolver_match.namespace %}active{% endif %}">📓 Журнал</a>
       <a href="{% url 'attestation:exam_list' %}" class="{% if 'attestation' in request.resolver_match.namespace and request.resolver_match.url_name != 'low_performance' %}active{% endif %}">📝 Аттестация</a>
       <a href="{% url 'schedule:group_list' %}" class="{% if 'schedule' in request.resolver_match.namespace %}active{% endif %}">🗓 Расписание</a>
+      <a href="{% url 'hr:dashboard' %}" class="{% if 'hr' in request.resolver_match.namespace %}active{% endif %}">👔 Кадры</a>
       <a href="{% url 'journal:low_performance' %}" class="{% if request.resolver_match.url_name == 'low_performance' %}active{% endif %}">⚠ Уведомления</a>
       <a href="{% url 'contingent:export_list' %}" class="{% if 'export' in request.resolver_match.url_name %}active{% endif %}">🔄 Выгрузка в Реестр СПО</a>
     </nav>

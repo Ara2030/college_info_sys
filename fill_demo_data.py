@@ -289,6 +289,110 @@ for group in Group.objects.all():
 # Публикуем всё расписание
 published = ScheduleEntry.objects.update(is_published=True)
 
+# ==========================================================================
+# Модуль 2.5 «Кадровый учёт»: сотрудники, штатное, тарификация, 1С, приказы
+# ==========================================================================
+from hr.models import (Employee, HROrder, SalaryExport, StaffPosition,  # noqa: E402
+                       StaffingUnit, TarificationItem, TarificationPeriod)
+from hr.services import (apply_hr_order, build_salary_export,  # noqa: E402
+                         build_tarification_from_curriculum)
+
+# Сотрудники: создаём по преподавателям (связь с расписанием) + АУП + персонал
+employees_created = 0
+for t in Teacher.objects.all():
+    emp, was = Employee.objects.get_or_create(
+        last_name=t.last_name, first_name=t.first_name, middle_name=t.middle_name,
+        defaults={
+            'category': 'teacher', 'position': t.position or 'Преподаватель',
+            'department': 'Учебная часть', 'status': 'active',
+            'hire_date': date(2018, 9, 1),
+            'snils': f'{random.randint(100,999)}-{random.randint(100,999)}-{random.randint(100,999)} {random.randint(10,99)}',
+            'inn': f'{random.randint(1000000000, 9999999999)}',
+            'education': 'Высшее', 'phone': f'+7 (9{random.randint(10,99)}) {random.randint(100,999)}-{random.randint(10,99)}-{random.randint(10,99)}',
+            'email': f'{t.last_name.lower()}@college.ru',
+            'teacher': t,
+        })
+    if was:
+        employees_created += 1
+
+# АУП и вспомогательный персонал
+management = [
+    ('Соколов', 'Андрей', 'Павлович', 'Директор', 'Администрация'),
+    ('Орлова', 'Наталья', 'Викторовна', 'Заместитель директора по УР', 'Администрация'),
+    ('Белов', 'Максим', 'Игоревич', 'Заведующий отделением', 'Отделение ИТ'),
+    ('Громова', 'Татьяна', 'Александровна', 'Бухгалтер', 'Бухгалтерия'),
+    ('Крылов', 'Сергей', 'Олегович', 'Специалист по кадрам', 'Отдел кадров'),
+    ('Дроздов', 'Николай', 'Сергеевич', 'Системный администратор', 'IT-отдел'),
+]
+for ln, fn, mn, pos, dep in management:
+    emp, was = Employee.objects.get_or_create(
+        last_name=ln, first_name=fn, middle_name=mn,
+        defaults={'category': 'management' if dep in ('Администрация', 'Отделение ИТ') else 'support',
+                  'position': pos, 'department': dep, 'status': 'active',
+                  'hire_date': date(2015, 9, 1), 'education': 'Высшее'})
+    if was:
+        employees_created += 1
+
+# Штатное расписание: должности + единицы
+staff_created = 0
+staff_positions = [
+    ('Директор', 'Администрация', 1, 90000),
+    ('Заместитель директора по УР', 'Администрация', 1, 70000),
+    ('Заведующий отделением', 'Отделения', 4, 55000),
+    ('Преподаватель', 'Учебная часть', 20, 42000),
+    ('Методист', 'Учебная часть', 2, 40000),
+    ('Бухгалтер', 'Бухгалтерия', 3, 45000),
+    ('Специалист по кадрам', 'Отдел кадров', 2, 42000),
+    ('Системный администратор', 'IT-отдел', 2, 48000),
+    ('Лаборант', 'Лаборатории', 4, 32000),
+    ('Уборщик служебных помещений', 'Хозяйственный отдел', 5, 25000),
+]
+for title, dep, rate, salary in staff_positions:
+    pos, was = StaffPosition.objects.get_or_create(
+        title=title, defaults={'department': dep, 'rate_count': rate, 'salary': salary})
+    if was:
+        staff_created += 1
+    # Назначаем сотрудников на ставки
+    if title == 'Преподаватель':
+        for emp in Employee.objects.filter(category='teacher', status='active')[:6]:
+            StaffingUnit.objects.get_or_create(position=pos, employee=emp,
+                                               defaults={'rate': 1, 'date_from': date(2018, 9, 1)})
+    elif title == 'Директор':
+        emp = Employee.objects.filter(position='Директор').first()
+        if emp:
+            StaffingUnit.objects.get_or_create(position=pos, employee=emp,
+                                               defaults={'rate': 1, 'date_from': date(2015, 9, 1)})
+    elif title == 'Бухгалтер':
+        emp = Employee.objects.filter(position='Бухгалтер').first()
+        if emp:
+            StaffingUnit.objects.get_or_create(position=pos, employee=emp,
+                                               defaults={'rate': 1, 'date_from': date(2015, 9, 1)})
+
+# Тарификация: период + импорт из учебного плана
+tar_period, tp_was = TarificationPeriod.objects.get_or_create(
+    name='Тарификация 2025/2026', year_start=2025,
+    defaults={'status': 'draft'})
+tar_created = build_tarification_from_curriculum(tar_period) if tp_was else 0
+
+# Выгрузка в 1С:Зарплата
+export_created = 0
+if not SalaryExport.objects.filter(tarification=tar_period).exists():
+    export = build_salary_export(tar_period)
+    export_created = 1
+
+# Приказы по личному составу
+order_created = 0
+if not HROrder.objects.exists():
+    emp = Employee.objects.filter(position='Преподаватель', status='active').first()
+    if emp:
+        order = HROrder.objects.create(
+            number=f'ПР-{random.randint(100,999)}', date=date(2025, 9, 1),
+            order_type='hire', employee=emp, position='Преподаватель',
+            basis='Трудовой договор от 01.09.2025 № 12',
+            text='Принять на работу по основному месту работы с учебной нагрузкой.')
+        apply_hr_order(order)
+        order_created += 1
+
 print(f'Готово: отделений={Department.objects.count()}, '
       f'специальностей={Specialty.objects.count()}, '
       f'групп={Group.objects.count()}, '
@@ -308,4 +412,10 @@ print(f'Готово: отделений={Department.objects.count()}, '
       f'пунктов плана={Curriculum.objects.count()} (создано: {plan_created}), '
       f'ограничений={TeacherUnavailable.objects.count()} (создано: {unav_created}), '
       f'занятий в расписании={ScheduleEntry.objects.count()} (создано: {entries_created}), '
-      f'опубликовано={published}')
+      f'опубликовано={published}, '
+      f'сотрудников={Employee.objects.count()} (создано: {employees_created}), '
+      f'должностей={StaffPosition.objects.count()} (создано: {staff_created}), '
+      f'единиц={StaffingUnit.objects.count()}, '
+      f'тарификация: {tar_period.name} — {tar_period.items.count()} строк (создано: {tar_created}), '
+      f'выгрузок 1С={SalaryExport.objects.count()} (создано: {export_created}), '
+      f'приказов={HROrder.objects.count()} (создано: {order_created})')
