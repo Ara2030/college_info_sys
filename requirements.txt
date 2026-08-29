@@ -1,0 +1,7 @@
+# Зависимости ИС колледжа (дипломный проект)
+# Установка: pip install -r requirements.txt
+
+Django==6.1
+psycopg[binary]==3.2.9
+Pillow>=10.0
+lxml>=5.0

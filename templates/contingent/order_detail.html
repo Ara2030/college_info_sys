@@ -1,0 +1,49 @@
+{% extends 'contingent/base.html' %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h3 class="mb-0">
+    Приказ №{{ order.number }} от {{ order.date|date:'d.m.Y' }}
+    {% if order.status == 'draft' %}<span class="badge bg-secondary">Черновик</span>{% else %}<span class="badge bg-success">Проведён</span>{% endif %}
+  </h3>
+  <div class="d-flex gap-2">
+    {% if order.status == 'draft' %}
+    <form method="post" action="{% url 'contingent:order_post' order.pk %}" class="d-inline">
+      {% csrf_token %}
+      <button class="btn btn-success" onclick="return confirm('Провести приказ? Статусы студентов будут обновлены, история движения записана.')">Провести приказ</button>
+    </form>
+    {% endif %}
+    <a href="{% url 'contingent:order_list' %}" class="btn btn-outline-secondary">← К списку</a>
+  </div>
+</div>
+
+<div class="card p-3 mb-3">
+  <h6 class="text-primary mb-2">{{ order.title }}</h6>
+  <div class="text-muted small">
+    Тип: <b>{{ order.order_type.name }}</b> ·
+    Основание: {{ order.basis|default:'—' }}
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table align-middle mb-0">
+      <thead><tr><th>№ п/п</th><th>Студент</th><th>Действие</th><th>Группа</th><th>Период</th><th>Причина</th></tr></thead>
+      <tbody>
+      {% for it in items %}
+        <tr>
+          <td class="text-muted">{{ forloop.counter }}</td>
+          <td><a href="{% url 'contingent:student_detail' it.student.pk %}" class="text-decoration-none fw-semibold">{{ it.student.full_name }}</a></td>
+          <td>{{ it.get_action_display }}</td>
+          <td>{{ it.group_to|default:'—' }}</td>
+          <td>{% if it.group_from %}{{ it.group_from }}{% else %}—{% endif %}</td>
+          <td>{% if it.group_to %}{{ it.group_to }}{% else %}—{% endif %}</td>
+          <td class="text-muted small">{{ it.basis|default:'—' }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6" class="text-center text-muted py-4">В приказе нет пунктов</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

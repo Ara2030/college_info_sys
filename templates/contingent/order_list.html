@@ -1,0 +1,33 @@
+{% extends 'contingent/base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">Приказы по контингенту <span class="badge bg-primary">{{ paginator.count }}</span></h3>
+  <a href="{% url 'contingent:order_create' %}" class="btn btn-primary">+ Новый приказ</a>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead><tr><th>№ приказа</th><th>Дата</th><th>Тип</th><th>Заголовок</th><th>Пунктов</th><th>Статус</th><th></th></tr></thead>
+      <tbody>
+      {% for o in orders %}
+        <tr>
+          <td><a href="{% url 'contingent:order_detail' o.pk %}" class="fw-semibold text-decoration-none">№{{ o.number }}</a></td>
+          <td>{{ o.date|date:'d.m.Y' }}</td>
+          <td>{{ o.order_type.name }}</td>
+          <td class="text-muted small">{{ o.title|truncatechars:60 }}</td>
+          <td>{{ o.items.count }}</td>
+          <td>
+            {% if o.status == 'draft' %}<span class="badge bg-secondary">Черновик</span>
+            {% else %}<span class="badge bg-success">Проведён</span>{% endif %}
+          </td>
+          <td class="text-end"><a href="{% url 'contingent:order_detail' o.pk %}" class="btn btn-sm btn-outline-secondary">Открыть</a></td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="7" class="text-center text-muted py-4">Приказов пока нет</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

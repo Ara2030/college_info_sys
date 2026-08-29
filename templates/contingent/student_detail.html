@@ -1,0 +1,94 @@
+{% extends 'contingent/base.html' %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h3 class="mb-0">
+    {{ student.full_name }}
+    <span class="badge {% if student.status == 'study' %}bg-success{% elif student.status == 'academic_leave' %}bg-warning text-dark{% elif student.status == 'expelled' %}bg-danger{% else %}bg-secondary{% endif %} align-middle">{{ student.get_status_display }}</span>
+  </h3>
+  <div class="d-flex gap-2">
+    <a href="{% url 'contingent:student_update' student.pk %}" class="btn btn-primary">Изменить</a>
+    <a href="{% url 'contingent:student_delete' student.pk %}" class="btn btn-outline-danger">Удалить</a>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-5">
+    <div class="card p-3">
+      <h6 class="text-primary mb-3">Основные сведения</h6>
+      <table class="table table-sm mb-0">
+        <tr><th class="text-muted fw-normal">Группа</th><td>{{ student.group|default:'—' }}</td></tr>
+        <tr><th class="text-muted fw-normal">Специальность</th><td>{{ student.specialty.code }} — {{ student.specialty.name }}</td></tr>
+        <tr><th class="text-muted fw-normal">Отделение</th><td>{{ student.group.department|default:'—' }}</td></tr>
+        <tr><th class="text-muted fw-normal">Курс</th><td>{{ student.course }}</td></tr>
+        <tr><th class="text-muted fw-normal">Дата рождения</th><td>{{ student.birth_date|date:'d.m.Y' }}</td></tr>
+        <tr><th class="text-muted fw-normal">СНИЛС</th><td>{{ student.snils|default:'—' }}</td></tr>
+        <tr><th class="text-muted fw-normal">№ личного дела</th><td>{{ student.student_card_number|default:'—' }}</td></tr>
+        <tr><th class="text-muted fw-normal">Дата зачисления</th><td>{{ student.enroll_date|date:'d.m.Y'|default:'—' }}</td></tr>
+        <tr><th class="text-muted fw-normal">Адрес</th><td>{{ student.full_address|default:'—' }}</td></tr>
+        <tr><th class="text-muted fw-normal">Телефон</th><td>{{ student.phone|default:'—' }}</td></tr>
+        <tr><th class="text-muted fw-normal">E-mail</th><td>{{ student.email|default:'—' }}</td></tr>
+      </table>
+    </div>
+
+    <div class="card p-3 mt-3">
+      <h6 class="text-primary mb-3">Документы</h6>
+      {% if documents %}
+      <table class="table table-sm mb-0">
+        <tbody>
+        {% for d in documents %}
+          <tr><td>{{ d.get_doc_type_display }}</td><td>{{ d.series }} {{ d.number }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% else %}<p class="text-muted small mb-0">Документы не заполнены</p>{% endif %}
+    </div>
+
+    <div class="card p-3 mt-3">
+      <h6 class="text-primary mb-3">Родители</h6>
+      {% if parents %}
+      <table class="table table-sm mb-0">
+        <tbody>
+        {% for p in parents %}
+          <tr><td>{{ p.last_name }} {{ p.first_name }} {{ p.middle_name }}<br><small class="text-muted">{{ p.phone }}</small></td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% else %}<p class="text-muted small mb-0">Не заполнено</p>{% endif %}
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card p-3">
+      <h6 class="text-primary mb-3">История движения контингента</h6>
+      {% if history %}
+      <table class="table table-sm mb-0">
+        <thead><tr><th>Дата</th><th>Приказ</th><th>Изменение</th></tr></thead>
+        <tbody>
+        {% for h in history %}
+          <tr>
+            <td>{{ h.date|date:'d.m.Y' }}</td>
+            <td>{% if h.order %}№{{ h.order.number }} от {{ h.order.date|date:'d.m.Y' }}{% else %}—{% endif %}</td>
+            <td>{{ h.get_status_from_display|default:'—' }} → <b>{{ h.get_status_to_display }}</b></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% else %}<p class="text-muted small mb-0">Движений не было</p>{% endif %}
+    </div>
+
+    <div class="card p-3 mt-3">
+      <h6 class="text-primary mb-3">Академические отпуска</h6>
+      {% if leaves %}
+      <table class="table table-sm mb-0">
+        <thead><tr><th>Период</th><th>Причина</th><th>Действует</th></tr></thead>
+        <tbody>
+        {% for l in leaves %}
+          <tr><td>{{ l.date_from|date:'d.m.Y' }} — {{ l.date_to|date:'d.m.Y' }}</td><td>{{ l.reason }}</td><td>{% if l.is_active %}✅{% else %}❌{% endif %}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% else %}<p class="text-muted small mb-0">Нет отпусков</p>{% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

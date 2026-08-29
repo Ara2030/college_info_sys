@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  XSD-схема формата обмена 1.0 для выгрузки сведений о контингенте
+  обучающихся в Реестр СПО. Модуль 2.1 «Контингент студентов».
+
+  ВНИМАНИЕ: веб-чат не отдаёт файлы с расширением .xsd, поэтому схема
+  сохранена как .xml. При переносе в проект переименуйте файл
+  в schema/registry_spo.xsd (сервис registry_export.py ищет его там).
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+  <xs:element name="РеестрСПО" type="ТипРеестр"/>
+
+  <!-- Корневой элемент -->
+  <xs:complexType name="ТипРеестр">
+    <xs:sequence>
+      <xs:element name="Заголовок" type="ТипЗаголовок"/>
+      <xs:element name="Студенты" type="ТипСтуденты"/>
+      <xs:element name="Приказы" type="ТипПриказы" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="версия" type="xs:string" use="required"/>
+    <xs:attribute name="датаФормирования" type="xs:date" use="required"/>
+  </xs:complexType>
+
+  <!-- Заголовок -->
+  <xs:complexType name="ТипЗаголовок">
+    <xs:sequence>
+      <xs:element name="ТипСообщения" type="xs:string"/>
+      <xs:element name="ВерсияФормата" type="xs:string"/>
+      <xs:element name="Отправитель" type="ТипОтправитель"/>
+      <xs:element name="Период" type="ТипПериод"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ТипОтправитель">
+    <xs:sequence>
+      <xs:element name="Наименование" type="xs:string"/>
+      <xs:element name="ОГРН" type="xs:string"/>
+      <xs:element name="ИНН" type="xs:string"/>
+      <xs:element name="КПП" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ТипПериод">
+    <xs:sequence>
+      <xs:element name="ДатаНачала" type="xs:date"/>
+      <xs:element name="ДатаОкончания" type="xs:date"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Студенты -->
+  <xs:complexType name="ТипСтуденты">
+    <xs:sequence>
+      <xs:element name="Студент" type="ТипСтудент" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ТипСтудент">
+    <xs:sequence>
+      <xs:element name="Идентификатор" type="xs:integer"/>
+      <xs:element name="НомерЛичногоДела" type="xs:string"/>
+      <xs:element name="ФИО" type="ТипФИО"/>
+      <xs:element name="СНИЛС" type="ТипСНИЛС"/>
+      <xs:element name="ДатаРождения" type="xs:date"/>
+      <xs:element name="Пол" type="ТипПол"/>
+      <xs:element name="Гражданство" type="xs:string"/>
+      <xs:element name="ДокументУдостоверяющийЛичность" type="ТипДокумент"/>
+      <xs:element name="Адрес" type="xs:string"/>
+      <xs:element name="Контакты" type="ТипКонтакты"/>
+      <xs:element name="Обучение" type="ТипОбучение"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ТипФИО">
+    <xs:sequence>
+      <xs:element name="Фамилия" type="xs:string"/>
+      <xs:element name="Имя" type="xs:string"/>
+      <xs:element name="Отчество" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:simpleType name="ТипСНИЛС">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="\d{3}-\d{3}-\d{3} \d{2}"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="ТипПол">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="М"/>
+      <xs:enumeration value="Ж"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="ТипДокумент">
+    <xs:sequence>
+      <xs:element name="Тип" type="xs:string"/>
+      <xs:element name="Серия" type="xs:string"/>
+      <xs:element name="Номер" type="xs:string"/>
+      <xs:element name="ДатаВыдачи" type="xs:date" minOccurs="0"/>
+      <xs:element name="КемВыдан" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ТипКонтакты">
+    <xs:sequence>
+      <xs:element name="Телефон" type="xs:string" minOccurs="0"/>
+      <xs:element name="Email" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ТипОбучение">
+    <xs:sequence>
+      <xs:element name="Группа" type="xs:string"/>
+      <xs:element name="Курс" type="xs:integer"/>
+      <xs:element name="ФормаОбучения" type="xs:string"/>
+      <xs:element name="СпециальностьКод" type="xs:string"/>
+      <xs:element name="СпециальностьНаименование" type="xs:string"/>
+      <xs:element name="Статус" type="xs:string"/>
+      <xs:element name="ДатаЗачисления" type="xs:date" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Приказы -->
+  <xs:complexType name="ТипПриказы">
+    <xs:sequence>
+      <xs:element name="Приказ" type="ТипПриказ" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ТипПриказ">
+    <xs:sequence>
+      <xs:element name="Номер" type="xs:string"/>
+      <xs:element name="Дата" type="xs:date"/>
+      <xs:element name="Вид" type="xs:string"/>
+      <xs:element name="Тема" type="xs:string"/>
+      <xs:element name="Статус" type="xs:string"/>
+      <xs:element name="Пункты" type="ТипПункты"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ТипПункты">
+    <xs:sequence>
+      <xs:element name="Пункт" type="ТипПункт" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ТипПункт">
+    <xs:sequence>
+      <xs:element name="Действие" type="xs:string"/>
+      <xs:element name="Студент" type="xs:string"/>
+      <xs:element name="ДатаВступленияВСилу" type="xs:date"/>
+    </xs:sequence>
+  </xs:complexType>
+
+</xs:schema>

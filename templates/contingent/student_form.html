@@ -1,0 +1,63 @@
+{% extends 'contingent/base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">{% if object %}Карточка студента — {{ object.short_name }}{% else %}Новый студент{% endif %}</h3>
+  <a href="{% url 'contingent:student_list' %}" class="btn btn-outline-secondary">← Назад</a>
+</div>
+
+<form method="post">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  <div class="row g-3">
+    <div class="col-lg-6">
+      <div class="card p-3">
+        <h6 class="text-primary">Личные данные</h6>
+        {% include 'contingent/_field.html' with field=form.last_name %}
+        {% include 'contingent/_field.html' with field=form.first_name %}
+        {% include 'contingent/_field.html' with field=form.middle_name %}
+        <div class="row">
+          <div class="col-6">{% include 'contingent/_field.html' with field=form.birth_date %}</div>
+          <div class="col-6">{% include 'contingent/_field.html' with field=form.gender %}</div>
+        </div>
+        <div class="row">
+          <div class="col-6">{% include 'contingent/_field.html' with field=form.snils %}</div>
+          <div class="col-6">{% include 'contingent/_field.html' with field=form.citizenship %}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card p-3">
+        <h6 class="text-primary">Учёба</h6>
+        {% include 'contingent/_field.html' with field=form.group %}
+        {% include 'contingent/_field.html' with field=form.specialty %}
+        <div class="row">
+          <div class="col-6">{% include 'contingent/_field.html' with field=form.status %}</div>
+          <div class="col-6">{% include 'contingent/_field.html' with field=form.student_card_number %}</div>
+        </div>
+        {% include 'contingent/_field.html' with field=form.enroll_date %}
+      </div>
+      <div class="card p-3 mt-3">
+        <h6 class="text-primary">Контакты и адрес</h6>
+        <div class="row">
+          <div class="col-6">{% include 'contingent/_field.html' with field=form.phone %}</div>
+          <div class="col-6">{% include 'contingent/_field.html' with field=form.email %}</div>
+        </div>
+        <div class="row">
+          <div class="col-4">{% include 'contingent/_field.html' with field=form.address_index %}</div>
+          <div class="col-8">{% include 'contingent/_field.html' with field=form.address_city %}</div>
+        </div>
+        {% include 'contingent/_field.html' with field=form.address_street %}
+        <div class="row">
+          <div class="col-6">{% include 'contingent/_field.html' with field=form.address_house %}</div>
+          <div class="col-6">{% include 'contingent/_field.html' with field=form.address_flat %}</div>
+        </div>
+        {% include 'contingent/_field.html' with field=form.note %}
+      </div>
+    </div>
+  </div>
+  <div class="mt-3 d-flex gap-2">
+    <button type="submit" class="btn btn-primary">Сохранить</button>
+    <a href="{% url 'contingent:student_list' %}" class="btn btn-outline-secondary">Отмена</a>
+  </div>
+</form>
+{% endblock %}
