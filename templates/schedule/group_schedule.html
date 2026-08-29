@@ -1,0 +1,71 @@
+{% extends 'contingent/base.html' %}
+{% load schedule_extras %}
+{% block title %}Расписание группы {{ group.name }}{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h3 class="mb-0">Расписание — {{ group.name }}
+    <span class="badge bg-primary">{{ entries|length }}</span>
+  </h3>
+  <div class="d-flex gap-2">
+    <a href="{% url 'schedule:entry_create' %}?group={{ group.pk }}" class="btn btn-outline-primary">+ Занятие</a>
+    <a href="{% url 'schedule:group_list' %}" class="btn btn-outline-secondary">← Группы</a>
+  </div>
+</div>
+
+<div class="card p-3 mb-3">
+  <form method="get" class="row g-2 align-items-end">
+    <div class="col-auto">
+      <label class="form-label small mb-1">Семестр</label>
+      <select name="semester" class="form-select form-select-sm" onchange="this.form.submit()">
+        {% for s in "123456" %}
+        <option value="{{ s }}" {% if semester == s %}selected{% endif %}>Семестр {{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-bordered align-middle mb-0">
+      <thead>
+        <tr>
+          <th class="text-center">Пара</th>
+          <th class="text-center">Время</th>
+          {% for d, dname in days %}<th class="text-center">{{ dname }}</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for slot, time in slots %}
+        <tr>
+          <td class="text-center fw-semibold">{{ slot }}</td>
+          <td class="text-muted small text-nowrap">{{ time }}</td>
+          {% for d, dname in days %}
+          <td style="min-width:150px" class="align-top">
+            {% if grid %}
+              {% for day, cells in grid.items %}{% if day == d %}
+                {% with cell=cells|get_item:slot %}
+                  {% if cell %}
+                  <div class="border-start border-3 ps-2 {% if cell.week_type == 'odd' %}border-warning{% elif cell.week_type == 'even' %}border-info{% else %}border-primary{% endif %}">
+                    <div class="fw-semibold small">{{ cell.subject.name }}</div>
+                    <div class="text-muted small">{{ cell.teacher.short_name }}</div>
+                    <div class="text-muted small">ауд. {{ cell.room.name }}</div>
+                    <div class="mt-1 d-flex gap-1">
+                      {% if not cell.is_published %}<span class="badge bg-secondary">черновик</span>{% endif %}
+                      {% if cell.week_type != 'every' %}<span class="badge bg-light text-dark">{{ cell.get_week_type_display }}</span>{% endif %}
+                    </div>
+                  </div>
+                  {% else %}<span class="text-muted small">—</span>{% endif %}
+                {% endwith %}
+              {% endif %}{% endfor %}
+            {% else %}<span class="text-muted small">—</span>{% endif %}
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+<p class="text-muted small mt-2 mb-0">Синяя полоса — каждая неделя, жёлтая — нечётная, голубая — чётная.</p>
+{% endblock %}

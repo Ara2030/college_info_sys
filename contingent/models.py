@@ -334,6 +334,7 @@ class OrderItem(models.Model):
         ('transfer', 'Перевести'),
         ('academic_leave', 'Академ. отпуск'),
         ('recover', 'Восстановить'),
+        ('debt', 'Академическая задолженность'),
     ]
 
     order = models.ForeignKey(

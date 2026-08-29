@@ -1,0 +1,43 @@
+{% extends 'contingent/base.html' %}
+{% block title %}Замена — {{ entry }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">Оперативная корректировка занятия</h3>
+  <a href="{% url 'schedule:conflicts' %}" class="btn btn-outline-secondary">← Расписание</a>
+</div>
+
+<div class="card p-4 mb-3" style="max-width:620px;">
+  <h6 class="text-primary mb-3">Текущее занятие</h6>
+  <table class="table table-sm mb-0">
+    <tr><th class="text-muted fw-normal">Группа</th><td>{{ entry.group.name }}</td></tr>
+    <tr><th class="text-muted fw-normal">Дисциплина</th><td>{{ entry.subject.name }}</td></tr>
+    <tr><th class="text-muted fw-normal">Преподаватель</th><td>{{ entry.teacher.short_name }}</td></tr>
+    <tr><th class="text-muted fw-normal">Аудитория</th><td>{{ entry.room.name }}</td></tr>
+    <tr><th class="text-muted fw-normal">Время</th><td>{{ entry.day_name }}, {{ entry.lesson_number }} пара ({{ entry.slot_time }})</td></tr>
+  </table>
+</div>
+
+<form method="post">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  <div class="card p-4 mb-3" style="max-width:620px;">
+    <h6 class="text-primary mb-3">Новые значения (замена преподавателя / аудитории)</h6>
+    <div class="mb-3">
+      <label class="form-label" for="{{ form.teacher.id_for_label }}">Преподаватель</label>
+      {{ form.teacher }}
+    </div>
+    <div class="mb-3">
+      <label class="form-label" for="{{ form.room.id_for_label }}">Аудитория</label>
+      {{ form.room }}
+    </div>
+    <div class="mb-3">
+      <label class="form-label" for="{{ form.comment.id_for_label }}">Комментарий к замене</label>
+      {{ form.comment }}
+    </div>
+  </div>
+  <div class="d-flex gap-2">
+    <button type="submit" class="btn btn-primary">Применить замену</button>
+    <a href="{% url 'schedule:conflicts' %}" class="btn btn-outline-secondary">Отмена</a>
+  </div>
+</form>
+{% endblock %}

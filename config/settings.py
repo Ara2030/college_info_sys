@@ -23,6 +23,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'contingent',          # <-- модуль 2.1 «Контингент студентов»
     'journal',             # <-- модуль 2.2 «Электронный журнал»
+    'attestation',         # <-- модуль 2.3 «Промежуточная аттестация»
+    'schedule',            # <-- модуль 2.4 «Формирование расписания»
 ]
 
 MIDDLEWARE = [

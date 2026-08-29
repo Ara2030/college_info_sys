@@ -1,0 +1,39 @@
+{% extends 'contingent/base.html' %}
+{% block title %}Список на стипендию — {{ period.name }}{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h3 class="mb-0">Список на стипендию — {{ period.name }}</h3>
+  <div class="d-flex gap-2">
+    <a href="javascript:window.print()" class="btn btn-outline-secondary">🖨 Печать</a>
+    <a href="{% url 'attestation:scholarship_list' %}" class="btn btn-outline-secondary">← Стипендии</a>
+  </div>
+</div>
+
+<div class="card p-3 mb-3">
+  <div class="row text-center">
+    <div class="col"><div class="text-muted small">Период</div><div class="fw-semibold">{{ period.period_start|date:'d.m.Y' }} — {{ period.period_end|date:'d.m.Y' }}</div></div>
+    <div class="col"><div class="text-muted small">Студентов</div><div class="fw-semibold">{{ period.students_count }}</div></div>
+    <div class="col"><div class="text-muted small">Статус</div><div class="fw-semibold">{{ period.get_status_display }}</div></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead><tr><th>№</th><th>ФИО</th><th>Группа</th><th>Специальность</th></tr></thead>
+      <tbody>
+        {% for s in students %}
+        <tr>
+          <td class="text-muted">{{ forloop.counter }}</td>
+          <td class="fw-semibold">{{ s.full_name }}</td>
+          <td>{{ s.group.name }}</td>
+          <td class="text-muted small">{{ s.specialty.code }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="text-center text-muted py-4">В списке нет студентов</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

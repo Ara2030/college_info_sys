@@ -158,6 +158,137 @@ for group in Group.objects.all():
                 grades_created += 1
                 att_created += 1
 
+# ==========================================================================
+# Модуль 2.3 «Промежуточная аттестация»: расписание, ведомости, стипендия
+# ==========================================================================
+from attestation.models import Exam, ExamResult, AcademicDebt, ScholarshipPeriod  # noqa: E402
+from attestation.services import build_schedule, sync_debts_from_exam, \
+    build_scholarship_list  # noqa: E402
+
+# Автопостроение расписания экзаменов (с учётом ограничений)
+exams_created = 0
+for group in Group.objects.all():
+    exam_subjects = subject_objs[2:5]  # 3 дисциплины на экзамен
+    start = date(group.enroll_year + group.course, 6, 1)  # июньская сессия
+    try:
+        exams = build_schedule(group=group, subjects=exam_subjects,
+                               exam_type='exam', start_date=start)
+        exams_created += len(exams)
+    except Exception:
+        pass
+
+# Зачёты (2 дисциплины, не более одного в день)
+credits_created = 0
+for group in Group.objects.all():
+    credit_subjects = subject_objs[5:7]
+    start = date(group.enroll_year + group.course, 5, 20)
+    try:
+        credits = build_schedule(group=group, subjects=credit_subjects,
+                                 exam_type='credit', start_date=start)
+        credits_created += len(credits)
+    except Exception:
+        pass
+
+# Ведомости: результаты + автоматические задолженности
+results_created = 0
+debts_created = 0
+for exam in Exam.objects.all():
+    for student in exam.group.students.all():
+        # 12% — неуд, 18% — «3», остальное 4–5 (или зачтено для зачётов)
+        if exam.is_exam:
+            grade = random.choices(
+                ['5', '4', '3', '2'],
+                weights=[25, 35, 22, 18], k=1)[0] if exam.subject.name != 'Математика' else \
+                random.choices(['5', '4', '3', '2'], weights=[30, 30, 25, 15], k=1)[0]
+        else:
+            grade = random.choices(['pass', 'fail'], weights=[88, 12], k=1)[0]
+        present = random.random() > 0.05
+        res, was_created = ExamResult.objects.update_or_create(
+            exam=exam, student=student,
+            defaults={'grade': grade if present else '', 'present': present})
+        if was_created:
+            results_created += 1
+    # Задолженности по неудовлетворительным результатам
+    debts_created += len(sync_debts_from_exam(exam))
+
+# Стипендиальный список за «июньскую сессию»
+period = build_scholarship_list(
+    period_start=date(date.today().year, 5, 20),
+    period_end=date(date.today().year, 6, 30),
+)
+# ==========================================================================
+# Модуль 2.4 «Формирование расписания»: аудитории, преподаватели, план
+# ==========================================================================
+from schedule.models import Room, Teacher, Curriculum, ScheduleEntry, TeacherUnavailable  # noqa: E402
+from schedule.services import auto_build  # noqa: E402
+
+# Аудитории (48 по ТЗ: 32 кабинета, 10 лабораторий, 6 компьютерных классов)
+rooms_created = 0
+for i in range(1, 33):
+    r, was = Room.objects.get_or_create(name=f'А-{i:02d}', defaults={
+        'building': 'Учебный корпус', 'capacity': random.choice([24, 30, 32]),
+        'room_type': 'lecture'})
+    if was:
+        rooms_created += 1
+for i in range(1, 11):
+    r, was = Room.objects.get_or_create(name=f'Л-{i:02d}', defaults={
+        'building': 'Учебный корпус', 'capacity': 16, 'room_type': 'lab'})
+    if was:
+        rooms_created += 1
+for i in range(1, 7):
+    r, was = Room.objects.get_or_create(name=f'К-{i:02d}', defaults={
+        'building': 'Учебный корпус', 'capacity': 15, 'room_type': 'computer'})
+    if was:
+        rooms_created += 1
+
+# Преподаватели (8)
+teacher_names = [
+    ('Иванов', 'Иван', 'Иванович', 'Преподаватель'),
+    ('Петрова', 'Мария', 'Сергеевна', 'Старший преподаватель'),
+    ('Сидоров', 'Пётр', 'Петрович', 'Преподаватель'),
+    ('Кузнецова', 'Анна', 'Андреевна', 'Преподаватель'),
+    ('Смирнов', 'Алексей', 'Викторович', 'Преподаватель'),
+    ('Волкова', 'Елена', 'Дмитриевна', 'Старший преподаватель'),
+    ('Козлов', 'Дмитрий', 'Александрович', 'Преподаватель'),
+    ('Морозова', 'Ольга', 'Игоревна', 'Преподаватель'),
+]
+teacher_objs = []
+for ln, fn, mn, pos in teacher_names:
+    t, was = Teacher.objects.get_or_create(
+        last_name=ln, first_name=fn, middle_name=mn,
+        defaults={'position': pos, 'department': 'Учебная часть'})
+    teacher_objs.append(t)
+
+# Учебный план: каждой группе по 3-4 дисциплины из существующих (с преподавателем)
+plan_created = 0
+subject_pool = Subject.objects.all()
+for group in Group.objects.all():
+    for idx, subj in enumerate(subject_pool[:4]):
+        teacher = teacher_objs[idx % len(teacher_objs)]
+        cur, was = Curriculum.objects.get_or_create(
+            group=group, subject=subj, semester=1,
+            defaults={'teacher': teacher, 'hours_per_week': 2,
+                      'exam_type': random.choice(['exam', 'credit'])})
+        if was:
+            plan_created += 1
+
+# Ограничения времени работы: каждый преподаватель недоступен 1 слот в неделю
+unav_created = 0
+for i, teacher in enumerate(teacher_objs):
+    u, was = TeacherUnavailable.objects.get_or_create(
+        teacher=teacher, day_of_week=(i % 6) + 1, lesson_number=(i % 5) + 1,
+        semester=1, defaults={'comment': 'Методический день'})
+    if was:
+        unav_created += 1
+
+# Автопостроение расписания на 1 семестр
+entries_created = 0
+for group in Group.objects.all():
+    entries_created += len(auto_build(group=group, semester=1))
+
+# Публикуем всё расписание
+published = ScheduleEntry.objects.update(is_published=True)
+
 print(f'Готово: отделений={Department.objects.count()}, '
       f'специальностей={Specialty.objects.count()}, '
       f'групп={Group.objects.count()}, '
@@ -166,4 +297,15 @@ print(f'Готово: отделений={Department.objects.count()}, '
       f'дисциплин={Subject.objects.count()}, '
       f'занятий={Lesson.objects.count()} (создано: {lessons_created}), '
       f'оценок={Grade.objects.count()} (создано: {grades_created}), '
-      f'записей посещаемости={Attendance.objects.count()} (создано: {att_created})')
+      f'записей посещаемости={Attendance.objects.count()} (создано: {att_created}), '
+      f'экзаменов={Exam.objects.filter(exam_type="exam").count()} (создано: {exams_created}), '
+      f'зачётов={Exam.objects.filter(exam_type="credit").count()} (создано: {credits_created}), '
+      f'результатов={ExamResult.objects.count()} (создано: {results_created}), '
+      f'задолженностей={AcademicDebt.objects.count()} (создано: {debts_created}), '
+      f'стипендия: {period.name} — {period.students_count} студентов, '
+      f'аудиторий={Room.objects.count()} (создано: {rooms_created}), '
+      f'преподавателей={Teacher.objects.count()}, '
+      f'пунктов плана={Curriculum.objects.count()} (создано: {plan_created}), '
+      f'ограничений={TeacherUnavailable.objects.count()} (создано: {unav_created}), '
+      f'занятий в расписании={ScheduleEntry.objects.count()} (создано: {entries_created}), '
+      f'опубликовано={published}')
