@@ -1,0 +1,50 @@
+{% extends 'contingent/base.html' %}
+{% block title %}Занятие {{ lesson }}{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h3 class="mb-0">Занятие: {{ lesson.subject.name }} — {{ lesson.group.name }}</h3>
+  <div class="d-flex gap-2">
+    <a href="{% url 'journal:lesson_update' lesson.pk %}" class="btn btn-primary">Изменить отметки</a>
+    <a href="{% url 'journal:group_detail' lesson.group.pk %}" class="btn btn-outline-secondary">← Журнал группы</a>
+  </div>
+</div>
+
+<div class="card p-3 mb-3">
+  <div class="row text-center">
+    <div class="col"><div class="text-muted small">Дата</div><div class="fw-semibold">{{ lesson.date|date:'d.m.Y' }}</div></div>
+    <div class="col"><div class="text-muted small">Пара</div><div class="fw-semibold">{{ lesson.lesson_number }}</div></div>
+    <div class="col"><div class="text-muted small">Тема</div><div class="fw-semibold">{{ lesson.topic|default:'—' }}</div></div>
+    <div class="col"><div class="text-muted small">Преподаватель</div><div class="fw-semibold">{{ lesson.teacher|default:'—' }}</div></div>
+    <div class="col"><div class="text-muted small">Присутствовали</div><div class="fw-semibold">{{ present_count }} из {{ students_count }}</div></div>
+    <div class="col"><div class="text-muted small">Оценок выставлено</div><div class="fw-semibold">{{ graded_count }}</div></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead><tr><th>№</th><th>Студент</th><th>Оценка</th><th class="text-center">Посещаемость</th></tr></thead>
+      <tbody>
+      {% for r in rows %}
+        <tr>
+          <td class="text-muted">{{ forloop.counter }}</td>
+          <td><a href="{% url 'journal:student_progress' r.student.pk %}" class="text-decoration-none fw-semibold">{{ r.student.full_name }}</a></td>
+          <td>
+            {% if r.grade_value %}
+              {% if r.grade_value == 'н/а' %}<span class="badge bg-danger">н/а</span>
+              {% elif r.grade_value == '5' %}<span class="badge bg-success">5</span>
+              {% elif r.grade_value == '4' %}<span class="badge bg-info text-dark">4</span>
+              {% elif r.grade_value == '3' %}<span class="badge bg-warning text-dark">3</span>
+              {% else %}<span class="badge bg-danger">2</span>{% endif %}
+            {% else %}<span class="text-muted">—</span>{% endif %}
+          </td>
+          <td class="text-center">{% if r.present %}✅{% else %}❌{% endif %}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="4" class="text-center text-muted py-4">В группе нет студентов</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

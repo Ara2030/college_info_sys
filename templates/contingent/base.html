@@ -28,6 +28,8 @@
       <a href="{% url 'contingent:student_list' %}" class="{% if 'student' in request.resolver_match.url_name %}active{% endif %}">👥 Студенты</a>
       <a href="{% url 'contingent:group_list' %}" class="{% if 'group' in request.resolver_match.url_name %}active{% endif %}">🎓 Группы</a>
       <a href="{% url 'contingent:order_list' %}" class="{% if 'order' in request.resolver_match.url_name %}active{% endif %}">📜 Приказы</a>
+      <a href="{% url 'journal:group_list' %}" class="{% if 'journal' in request.resolver_match.namespace %}active{% endif %}">📓 Журнал</a>
+      <a href="{% url 'journal:low_performance' %}" class="{% if request.resolver_match.url_name == 'low_performance' %}active{% endif %}">⚠ Уведомления</a>
       <a href="{% url 'contingent:export_list' %}" class="{% if 'export' in request.resolver_match.url_name %}active{% endif %}">🔄 Выгрузка в Реестр СПО</a>
     </nav>
   </aside>

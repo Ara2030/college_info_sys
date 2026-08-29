@@ -115,8 +115,55 @@ order_types = [
 for code, name, doc_name in order_types:
     OrderType.objects.get_or_create(code=code, defaults={'name': name, 'document_name': doc_name})
 
+# ==========================================================================
+# Модуль 2.2 «Электронный журнал»: дисциплины, занятия, оценки, посещаемость
+# ==========================================================================
+from journal.models import Subject, Lesson, Grade, Attendance  # noqa: E402
+
+# Дисциплины для IT-групп
+subject_names = [
+    'Информатика', 'Математика', 'Базы данных', 'Программирование',
+    'Операционные системы', 'Компьютерные сети', 'Физика', 'Иностранный язык',
+]
+subject_objs = []
+for name in subject_names:
+    subj, _ = Subject.objects.get_or_create(
+        name=name, defaults={'code': name[:2].upper(), 'teacher': f'Преподаватель {name}'})
+    subject_objs.append(subj)
+
+# Занятия + отметки: для каждой группы проводим по 4 занятия (2 дисциплины × 2)
+lessons_created = 0
+grades_created = 0
+att_created = 0
+for group in Group.objects.all():
+    group_subjects = subject_objs[:2]  # для простоты берём первые 2 дисциплины
+    for subject in group_subjects:
+        for week in (1, 2):
+            lesson_date = date(group.enroll_year + group.course - 1, 9, 1 + (week - 1) * 7)
+            lesson, was_created = Lesson.objects.get_or_create(
+                subject=subject, group=group, date=lesson_date, lesson_number=week,
+                defaults={'topic': f'{subject.name} — занятие {week}', 'teacher': subject.teacher})
+            if was_created:
+                lessons_created += 1
+            # Отметки для каждого студента группы
+            for student in group.students.all():
+                present = random.random() > 0.15  # ~85% посещаемость, у некоторых хуже
+                if present and random.random() < 0.1:
+                    present = False  # искусственно добавляем пропускающих
+                Grade.objects.get_or_create(
+                    lesson=lesson, student=student,
+                    defaults={'value': random.choice(['5', '4', '4', '3', '3', '2'])})
+                Attendance.objects.get_or_create(
+                    lesson=lesson, student=student, defaults={'present': present})
+                grades_created += 1
+                att_created += 1
+
 print(f'Готово: отделений={Department.objects.count()}, '
       f'специальностей={Specialty.objects.count()}, '
       f'групп={Group.objects.count()}, '
       f'студентов={Student.objects.count()} (создано новых: {created}), '
-      f'типов приказов={OrderType.objects.count()}')
+      f'типов приказов={OrderType.objects.count()}, '
+      f'дисциплин={Subject.objects.count()}, '
+      f'занятий={Lesson.objects.count()} (создано: {lessons_created}), '
+      f'оценок={Grade.objects.count()} (создано: {grades_created}), '
+      f'записей посещаемости={Attendance.objects.count()} (создано: {att_created})')
