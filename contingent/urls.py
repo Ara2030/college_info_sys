@@ -9,11 +9,13 @@ urlpatterns = [
     path('', views.DashboardView.as_view(), name='dashboard'),
 
     # Студенты
+    path('', views.DashboardView.as_view(), name='dashboard'),
     path('students/', views.StudentListView.as_view(), name='student_list'),
     path('students/new/', views.StudentCreateView.as_view(), name='student_create'),
     path('students/<int:pk>/', views.StudentDetailView.as_view(), name='student_detail'),
     path('students/<int:pk>/edit/', views.StudentUpdateView.as_view(), name='student_update'),
     path('students/<int:pk>/delete/', views.StudentDeleteView.as_view(), name='student_delete'),
+    path('students/<int:pk>/dossier/', views.StudentDossierView.as_view(), name='student_dossier'),
 
     # Группы
     path('groups/', views.GroupListView.as_view(), name='group_list'),
@@ -27,6 +29,7 @@ urlpatterns = [
     path('orders/new/', views.OrderCreateView.as_view(), name='order_create'),
     path('orders/<int:pk>/', views.OrderDetailView.as_view(), name='order_detail'),
     path('orders/<int:pk>/post/', views.OrderPostView.as_view(), name='order_post'),
+    path('orders/<int:pk>/print/', views.OrderPrintView.as_view(), name='order_print'),
 
     # Выгрузка в Реестр СПО
     path('exports/', views_registry.export_registry_list, name='export_list'),

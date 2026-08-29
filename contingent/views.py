@@ -10,7 +10,7 @@ from django.views.generic import (ListView, DetailView, CreateView,
 from .forms import StudentForm, GroupForm, OrderForm, OrderItemFormSet
 from .models import (Student, Group, Order, OrderItem, StudentStatus,
                      Department, Specialty, RegistryExport)
-from .services.orders import post_order
+from .services.orders import post_order, render_order_text
 
 from accounts.access import RoleRequiredMixin
 from accounts.roles import CONTINGENT_EDIT
@@ -124,6 +124,21 @@ class StudentDetailView(DetailView):
         ctx['documents'] = self.object.documents.all()
         ctx['parents'] = self.object.parents.all()
         ctx['history'] = self.object.status_history.select_related('order').order_by('-date')[:20]
+        ctx['leaves'] = self.object.academic_leaves.select_related('order')
+        return ctx
+
+
+class StudentDossierView(DetailView):
+    """Личное дело студента: печатная форма (для архива / комиссии)."""
+    model = Student
+    template_name = 'contingent/student_dossier.html'
+    context_object_name = 'student'
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['documents'] = self.object.documents.all()
+        ctx['parents'] = self.object.parents.all()
+        ctx['history'] = self.object.status_history.select_related('order').order_by('-date')
         ctx['leaves'] = self.object.academic_leaves.select_related('order')
         return ctx
 
@@ -273,3 +288,17 @@ class OrderPostView(RoleRequiredMixin, View):
         except ValueError as exc:
             messages.error(request, str(exc))
         return redirect('contingent:order_detail', pk=order.pk)
+
+
+class OrderPrintView(RoleRequiredMixin, DetailView):
+    """Печатная форма приказа: текст по шаблону типа + номенклатура дел."""
+    roles = CONTINGENT_EDIT
+    model = Order
+    template_name = 'contingent/order_print.html'
+    context_object_name = 'order'
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['document_text'] = render_order_text(self.object)
+        ctx['items'] = self.object.items.select_related('student', 'group_to', 'group_from')
+        return ctx

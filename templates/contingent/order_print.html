@@ -1,0 +1,49 @@
+{% extends 'contingent/base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">Печать приказа</h3>
+  <div class="d-flex gap-2">
+    <a href="javascript:window.print()" class="btn btn-outline-secondary">🖨 Печать</a>
+    <a href="{% url 'contingent:order_detail' order.pk %}" class="btn btn-outline-secondary">← Назад</a>
+  </div>
+</div>
+
+<div class="card p-4">
+  <div class="text-center mb-2">
+    <div>ГБПОУ «Колледж»</div>
+    <div class="fw-semibold fs-5 mt-2">ПРИКАЗ</div>
+    <div>№ {{ order.number }} от {{ order.date|date:'d.m.Y' }}</div>
+  </div>
+
+  {% if order.order_type.file_ref %}
+  <div class="small text-muted text-center mb-3">
+    Номенклатура дел: <b>{{ order.order_type.file_ref }}</b>
+  </div>
+  {% endif %}
+
+  <div class="fw-semibold text-center mb-3">{{ order.title }}</div>
+
+  {% if document_text %}
+  <div style="white-space:pre-line">{{ document_text }}</div>
+  {% else %}
+  <p>В соответствии с действующим законодательством приказываю:</p>
+  <ol>
+    {% for item in items %}
+    <li>
+      {{ item.get_action_display }}: <b>{{ item.student.full_name }}</b>
+      ({{ item.student.group.name }})
+      {% if item.group_to %}в группу {{ item.group_to.name }}{% endif %}
+      {% if item.basis %}— {{ item.basis }}{% endif %}
+    </li>
+    {% endfor %}
+  </ol>
+  {% endif %}
+
+  {% if order.comment %}<p class="text-muted small">{{ order.comment }}</p>{% endif %}
+
+  <div class="mt-5 d-flex justify-content-between">
+    <div>Директор: ______________________</div>
+    <div>М.П.</div>
+  </div>
+</div>
+{% endblock %}

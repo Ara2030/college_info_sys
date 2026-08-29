@@ -145,6 +145,16 @@ class Student(models.Model):
     address_house = models.CharField('Дом', max_length=20, blank=True)
     address_flat = models.CharField('Квартира', max_length=10, blank=True)
 
+    # Документ об образовании (аттестат / диплом)
+    education_doc_series = models.CharField('Серия документа об образовании', max_length=20, blank=True)
+    education_doc_number = models.CharField('Номер документа об образовании', max_length=30, blank=True)
+    education_doc_date = models.DateField('Дата выдачи документа об образовании', null=True, blank=True)
+    education_doc_org = models.CharField('Организация, выдавшая документ', max_length=250, blank=True)
+
+    # Реквизиты социальной карты
+    social_card_number = models.CharField('Номер социальной карты', max_length=30, blank=True)
+    social_card_issued = models.DateField('Дата выдачи социальной карты', null=True, blank=True)
+
     note = models.TextField('Примечание', blank=True)
     created_at = models.DateTimeField('Создано', auto_now_add=True)
     updated_at = models.DateTimeField('Обновлено', auto_now=True)
@@ -278,6 +288,12 @@ class OrderType(models.Model):
     name = models.CharField('Наименование', max_length=200)
     document_name = models.CharField('Название документа', max_length=200, blank=True)
 
+    # Шаблон текста приказа (плейсхолдеры: {student}, {date}, {basis})
+    template_text = models.TextField('Шаблон текста приказа', blank=True)
+    # Номенклатура дел
+    file_code = models.CharField('Код дела по номенклатуре', max_length=50, blank=True)
+    file_title = models.CharField('Наименование дела', max_length=250, blank=True)
+
     class Meta:
         verbose_name = 'Тип приказа'
         verbose_name_plural = 'Типы приказов'
@@ -285,6 +301,13 @@ class OrderType(models.Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def file_ref(self):
+        """Ссылка по номенклатуре дел: «код дела. Наименование дела»."""
+        if self.file_code:
+            return f'{self.file_code}. {self.file_title}'.strip()
+        return self.file_title or ''
 
 
 class Order(models.Model):

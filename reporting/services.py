@@ -97,12 +97,25 @@ def _collect_hr_stats():
 
 def _spo1_data(year):
     """СПО-1: сведения о сети и численности."""
+    from contingent.models import Order, OrderItem
+    year_orders = Order.objects.filter(date__year=year)
     return {
-        'Наименование отчёта': 'СПО-1. Сведения о сети и численности обучающихся',
+        'Наименование отчёта': 'СПО-1. Сведения об образовательной организации',
         'Отчётный год': year,
         'Раздел 1. Сеть образовательной организации': _collect_contingent_stats(),
         'Раздел 2. Численность по курсам': _collect_students_by_course(),
-        'Раздел 3. Кадровое обеспечение': {
+        'Раздел 3. Движение контингента за год': {
+            'Приказов за год': year_orders.count(),
+            'Зачислено (приказы о зачислении)': year_orders.filter(
+                order_type__code='enroll').count(),
+            'Отчислено (приказы об отчислении)': year_orders.filter(
+                order_type__code='expel').count(),
+            'Переводы': year_orders.filter(order_type__code='transfer').count(),
+            'Академические отпуска': year_orders.filter(
+                order_type__code='academic_leave').count(),
+            'Восстановления': year_orders.filter(order_type__code='recover').count(),
+        },
+        'Раздел 4. Кадровое обеспечение': {
             k: v for k, v in _collect_hr_stats().items()
             if k in ('Педагогических работников', 'АУП', 'Вспомогательный персонал')
         },

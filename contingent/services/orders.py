@@ -16,6 +16,40 @@ ACTION_TO_STATUS = {
 }
 
 
+def render_order_text(order: Order) -> str:
+    """
+    Формирует текст приказа по шаблону типа приказа (OrderType.template_text)
+    с подстановкой плейсхолдеров:
+      {number}  — номер приказа, {date} — дата,
+      {student} — список студентов (пункты), {basis} — основание.
+    Если шаблон не задан — возвращает пустую строку.
+    """
+    template = (order.order_type.template_text
+                if order.order_type and order.order_type.template_text else '')
+    if not template:
+        return ''
+
+    items = order.items.select_related('student', 'group_to')
+    students_lines = []
+    for i, item in enumerate(items, 1):
+        action = item.get_action_display()
+        target = f' в группу {item.group_to.name}' if item.group_to else ''
+        basis = f' ({item.basis})' if item.basis else ''
+        students_lines.append(f'{i}. {item.student.full_name} — {action.lower()}{target}{basis}.')
+    students_text = '\n'.join(students_lines) if students_lines else '—'
+
+    replacements = {
+        '{number}': order.number,
+        '{date}': order.date.strftime('%d.%m.%Y'),
+        '{student}': students_text,
+        '{basis}': order.items.first().basis if order.items.exists() else '',
+    }
+    text = template
+    for key, value in replacements.items():
+        text = text.replace(key, str(value))
+    return text
+
+
 def post_order(order: Order) -> str:
     """Проводит приказ, возвращает строку-отчёт.
 

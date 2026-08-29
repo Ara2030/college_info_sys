@@ -180,6 +180,18 @@ def build_registry_xml(students, orders: Optional[Iterable[Order]] = None, *,
             else:
                 _text(doc, tag, value)
         _text(s, "Адрес", _address(student))
+        # Документ об образовании
+        edu = ET.SubElement(s, "ДокументОбОбразовании")
+        _text(edu, "Серия", getattr(student, "education_doc_series", "") or "")
+        _text(edu, "Номер", getattr(student, "education_doc_number", "") or "")
+        edu_date = getattr(student, "education_doc_date", None)
+        _text_or_skip(edu, "ДатаВыдачи", _date_text(edu_date))
+        _text(edu, "Организация", getattr(student, "education_doc_org", "") or "")
+        # Социальная карта
+        social = ET.SubElement(s, "СоциальнаяКарта")
+        _text(social, "Номер", getattr(student, "social_card_number", "") or "")
+        sc_date = getattr(student, "social_card_issued", None)
+        _text_or_skip(social, "ДатаВыдачи", _date_text(sc_date))
         contacts = ET.SubElement(s, "Контакты")
         _text(contacts, "Телефон", getattr(student, "phone", "") or "")
         _text(contacts, "Email", getattr(student, "email", "") or "")

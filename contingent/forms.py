@@ -34,10 +34,16 @@ class StudentForm(BootstrapFormMixin, forms.ModelForm):
                   'student_card_number', 'enroll_date',
                   'phone', 'email',
                   'address_index', 'address_city', 'address_street',
-                  'address_house', 'address_flat', 'note')
+                  'address_house', 'address_flat',
+                  'education_doc_series', 'education_doc_number',
+                  'education_doc_date', 'education_doc_org',
+                  'social_card_number', 'social_card_issued',
+                  'note')
         widgets = {
             'birth_date': forms.DateInput(attrs={'type': 'date'}),
             'enroll_date': forms.DateInput(attrs={'type': 'date'}),
+            'education_doc_date': forms.DateInput(attrs={'type': 'date'}),
+            'social_card_issued': forms.DateInput(attrs={'type': 'date'}),
             'note': forms.Textarea(attrs={'rows': 3}),
         }
 

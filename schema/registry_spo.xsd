@@ -66,8 +66,26 @@
       <xs:element name="Гражданство" type="xs:string"/>
       <xs:element name="ДокументУдостоверяющийЛичность" type="ТипДокумент"/>
       <xs:element name="Адрес" type="xs:string"/>
+      <xs:element name="ДокументОбОбразовании" type="ТипДокументОбОбразовании" minOccurs="0"/>
+      <xs:element name="СоциальнаяКарта" type="ТипСоциальнаяКарта" minOccurs="0"/>
       <xs:element name="Контакты" type="ТипКонтакты"/>
       <xs:element name="Обучение" type="ТипОбучение"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ТипДокументОбОбразовании">
+    <xs:sequence>
+      <xs:element name="Серия" type="xs:string"/>
+      <xs:element name="Номер" type="xs:string"/>
+      <xs:element name="ДатаВыдачи" type="xs:date" minOccurs="0"/>
+      <xs:element name="Организация" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ТипСоциальнаяКарта">
+    <xs:sequence>
+      <xs:element name="Номер" type="xs:string"/>
+      <xs:element name="ДатаВыдачи" type="xs:date" minOccurs="0"/>
     </xs:sequence>
   </xs:complexType>
 

@@ -6,6 +6,7 @@
     <span class="badge {% if student.status == 'study' %}bg-success{% elif student.status == 'academic_leave' %}bg-warning text-dark{% elif student.status == 'expelled' %}bg-danger{% else %}bg-secondary{% endif %} align-middle">{{ student.get_status_display }}</span>
   </h3>
   <div class="d-flex gap-2">
+    <a href="{% url 'contingent:student_dossier' student.pk %}" class="btn btn-outline-secondary">📁 Личное дело</a>
     <a href="{% url 'contingent:student_update' student.pk %}" class="btn btn-primary">Изменить</a>
     <a href="{% url 'contingent:student_delete' student.pk %}" class="btn btn-outline-danger">Удалить</a>
   </div>
@@ -25,6 +26,8 @@
         <tr><th class="text-muted fw-normal">№ личного дела</th><td>{{ student.student_card_number|default:'—' }}</td></tr>
         <tr><th class="text-muted fw-normal">Дата зачисления</th><td>{{ student.enroll_date|date:'d.m.Y'|default:'—' }}</td></tr>
         <tr><th class="text-muted fw-normal">Адрес</th><td>{{ student.full_address|default:'—' }}</td></tr>
+        <tr><th class="text-muted fw-normal">Документ об образовании</th><td>{{ student.education_doc_series }} {{ student.education_doc_number }}{% if student.education_doc_org %}<br><small class="text-muted">{{ student.education_doc_org }}</small>{% endif %}</td></tr>
+        <tr><th class="text-muted fw-normal">Соц. карта</th><td>{{ student.social_card_number|default:'—' }}{% if student.social_card_issued %} <small class="text-muted">({{ student.social_card_issued|date:'d.m.Y' }})</small>{% endif %}</td></tr>
         <tr><th class="text-muted fw-normal">Телефон</th><td>{{ student.phone|default:'—' }}</td></tr>
         <tr><th class="text-muted fw-normal">E-mail</th><td>{{ student.email|default:'—' }}</td></tr>
       </table>

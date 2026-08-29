@@ -1,0 +1,74 @@
+{% extends 'contingent/base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">Личное дело студента — {{ student.full_name }}</h3>
+  <div class="d-flex gap-2">
+    <a href="javascript:window.print()" class="btn btn-outline-secondary">🖨 Печать</a>
+    <a href="{% url 'contingent:student_detail' student.pk %}" class="btn btn-outline-secondary">← Карточка</a>
+  </div>
+</div>
+
+<div class="card p-4">
+  <div class="text-center mb-4">
+    <div class="fw-semibold fs-5">ЛИЧНОЕ ДЕЛО ОБУЧАЮЩЕГОСЯ</div>
+    <div>ГБПОУ «Колледж»</div>
+  </div>
+
+  <table class="table table-sm table-bordered align-middle mb-4">
+    <tr><th class="text-muted fw-normal" style="width:260px">Фамилия</th><td>{{ student.last_name }}</td></tr>
+    <tr><th class="text-muted fw-normal">Имя</th><td>{{ student.first_name }}</td></tr>
+    <tr><th class="text-muted fw-normal">Отчество</th><td>{{ student.middle_name|default:'—' }}</td></tr>
+    <tr><th class="text-muted fw-normal">Дата рождения</th><td>{{ student.birth_date|date:'d.m.Y' }}</td></tr>
+    <tr><th class="text-muted fw-normal">Пол</th><td>{{ student.get_gender_display|default:'—' }}</td></tr>
+    <tr><th class="text-muted fw-normal">СНИЛС</th><td>{{ student.snils|default:'—' }}</td></tr>
+    <tr><th class="text-muted fw-normal">Гражданство</th><td>{{ student.citizenship }}</td></tr>
+    <tr><th class="text-muted fw-normal">Группа</th><td>{{ student.group.name }}</td></tr>
+    <tr><th class="text-muted fw-normal">Специальность</th><td>{{ student.specialty.code }} — {{ student.specialty.name }}</td></tr>
+    <tr><th class="text-muted fw-normal">Номер личного дела</th><td>{{ student.student_card_number }}</td></tr>
+    <tr><th class="text-muted fw-normal">Дата зачисления</th><td>{{ student.enroll_date|date:'d.m.Y'|default:'—' }}</td></tr>
+    <tr><th class="text-muted fw-normal">Статус</th><td>{{ student.get_status_display }}</td></tr>
+  </table>
+
+  <div class="fw-semibold mb-2">Документ об образовании</div>
+  <table class="table table-sm table-bordered align-middle mb-4">
+    <tr><th class="text-muted fw-normal" style="width:260px">Серия</th><td>{{ student.education_doc_series|default:'—' }}</td></tr>
+    <tr><th class="text-muted fw-normal">Номер</th><td>{{ student.education_doc_number|default:'—' }}</td></tr>
+    <tr><th class="text-muted fw-normal">Дата выдачи</th><td>{{ student.education_doc_date|date:'d.m.Y'|default:'—' }}</td></tr>
+    <tr><th class="text-muted fw-normal">Организация</th><td>{{ student.education_doc_org|default:'—' }}</td></tr>
+  </table>
+
+  <div class="fw-semibold mb-2">Адрес регистрации и контакты</div>
+  <table class="table table-sm table-bordered align-middle mb-4">
+    <tr><th class="text-muted fw-normal" style="width:260px">Адрес</th><td>{{ student.full_address|default:'—' }}</td></tr>
+    <tr><th class="text-muted fw-normal">Телефон</th><td>{{ student.phone|default:'—' }}</td></tr>
+    <tr><th class="text-muted fw-normal">E-mail</th><td>{{ student.email|default:'—' }}</td></tr>
+    <tr><th class="text-muted fw-normal">Номер социальной карты</th><td>{{ student.social_card_number|default:'—' }}</td></tr>
+    <tr><th class="text-muted fw-normal">Дата выдачи соц. карты</th><td>{{ student.social_card_issued|date:'d.m.Y'|default:'—' }}</td></tr>
+  </table>
+
+  <div class="fw-semibold mb-2">Родители / законные представители</div>
+  {% if parents %}
+  <table class="table table-sm table-bordered align-middle mb-4">
+    {% for p in parents %}
+    <tr><th class="text-muted fw-normal" style="width:260px">Родитель</th><td>{{ p.last_name }} {{ p.first_name }} {{ p.middle_name }}{% if p.phone %} · {{ p.phone }}{% endif %}</td></tr>
+    {% endfor %}
+  </table>
+  {% else %}<p class="text-muted small">—</p>{% endif %}
+
+  <div class="fw-semibold mb-2">Движение контингента</div>
+  {% if history %}
+  <table class="table table-sm table-bordered align-middle mb-4">
+    <thead><tr><th>Дата</th><th>Приказ</th><th>Изменение</th></tr></thead>
+    <tbody>
+      {% for h in history %}
+      <tr>
+        <td>{{ h.date|date:'d.m.Y' }}</td>
+        <td>№{{ h.order.number }} от {{ h.order.date|date:'d.m.Y' }}</td>
+        <td>{{ h.get_status_from_display|default:'—' }} → {{ h.get_status_to_display }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p class="text-muted small">—</p>{% endif %}
+</div>
+{% endblock %}

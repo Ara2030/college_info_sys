@@ -53,6 +53,20 @@
         </div>
         {% include 'contingent/_field.html' with field=form.note %}
       </div>
+      <div class="card p-3 mt-3">
+        <h6 class="text-primary">Документ об образовании и соц. карта</h6>
+        <div class="row">
+          <div class="col-6">{% include 'contingent/_field.html' with field=form.education_doc_series %}</div>
+          <div class="col-6">{% include 'contingent/_field.html' with field=form.education_doc_number %}</div>
+        </div>
+        {% include 'contingent/_field.html' with field=form.education_doc_date %}
+        {% include 'contingent/_field.html' with field=form.education_doc_org %}
+        <hr>
+        <div class="row">
+          <div class="col-6">{% include 'contingent/_field.html' with field=form.social_card_number %}</div>
+          <div class="col-6">{% include 'contingent/_field.html' with field=form.social_card_issued %}</div>
+        </div>
+      </div>
     </div>
   </div>
   <div class="mt-3 d-flex gap-2">
