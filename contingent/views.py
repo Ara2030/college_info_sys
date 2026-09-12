@@ -7,9 +7,9 @@ from django.views import View
 from django.views.generic import (ListView, DetailView, CreateView,
                                   UpdateView, DeleteView, TemplateView)
 
-from .forms import StudentForm, GroupForm, OrderForm, OrderItemFormSet
+from .forms import StudentForm, GroupForm, OrderForm, OrderItemFormSet, ParentInfoForm
 from .models import (Student, Group, Order, OrderItem, StudentStatus,
-                     Department, Specialty, RegistryExport)
+                     Department, Specialty, RegistryExport, ParentInfo)
 from .services.orders import post_order, render_order_text
 
 from accounts.access import RoleRequiredMixin
@@ -302,3 +302,67 @@ class OrderPrintView(RoleRequiredMixin, DetailView):
         ctx['document_text'] = render_order_text(self.object)
         ctx['items'] = self.object.items.select_related('student', 'group_to', 'group_from')
         return ctx
+
+
+# ---------------- Родители (законные представители) ----------------
+
+class ParentListView(RoleRequiredMixin, ListView):
+    """Список родителей / законных представителей."""
+    roles = CONTINGENT_EDIT
+    model = ParentInfo
+    template_name = 'contingent/parent_list.html'
+    context_object_name = 'parents'
+    paginate_by = 25
+
+    def get_queryset(self):
+        qs = super().get_queryset().select_related('student', 'student__group')
+        q = self.request.GET.get('q', '').strip()
+        if q:
+            qs = qs.filter(
+                Q(last_name__icontains=q) | Q(first_name__icontains=q) |
+                Q(student__last_name__icontains=q) | Q(phone__icontains=q))
+        return qs
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['q'] = self.request.GET.get('q', '')
+        return ctx
+
+
+class ParentCreateView(RoleRequiredMixin, CreateView):
+    roles = CONTINGENT_EDIT
+    model = ParentInfo
+    form_class = ParentInfoForm
+    template_name = 'contingent/parent_form.html'
+
+    def get_initial(self):
+        initial = super().get_initial()
+        if self.request.GET.get('student'):
+            initial['student'] = self.request.GET['student']
+        return initial
+
+    def get_success_url(self):
+        return reverse_lazy('contingent:student_detail', kwargs={'pk': self.object.student_id})
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Сведения о родителе добавлены.')
+        return super().form_valid(form)
+
+
+class ParentUpdateView(RoleRequiredMixin, UpdateView):
+    roles = CONTINGENT_EDIT
+    model = ParentInfo
+    form_class = ParentInfoForm
+    template_name = 'contingent/parent_form.html'
+    success_url = reverse_lazy('contingent:parent_list')
+
+
+class ParentDeleteView(RoleRequiredMixin, DeleteView):
+    roles = CONTINGENT_EDIT
+    model = ParentInfo
+    template_name = 'contingent/parent_confirm_delete.html'
+    success_url = reverse_lazy('contingent:parent_list')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Сведения о родителе удалены.')
+        return super().form_valid(form)

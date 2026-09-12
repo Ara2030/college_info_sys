@@ -121,4 +121,7 @@ class StudentDocumentForm(BootstrapFormMixin, forms.ModelForm):
 class ParentInfoForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = ParentInfo
-        fields = ('last_name', 'first_name', 'middle_name', 'phone')
+        fields = ('student', 'relation', 'last_name', 'first_name', 'middle_name',
+                  'birth_date', 'phone', 'email', 'passport_series',
+                  'passport_number', 'address', 'workplace')
+        widgets = {'birth_date': forms.DateInput(attrs={'type': 'date'})}

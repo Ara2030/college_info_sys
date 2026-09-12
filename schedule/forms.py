@@ -2,8 +2,24 @@
 """Формы модуля «Формирование расписания» (2.4)."""
 from django import forms
 
-from .models import ScheduleEntry
+from .models import ScheduleEntry, Teacher
 from .services import check_entry_conflicts
+
+
+class TeacherForm(forms.ModelForm):
+    """Добавление / редактирование преподавателя."""
+
+    class Meta:
+        model = Teacher
+        fields = ('last_name', 'first_name', 'middle_name', 'position',
+                  'department', 'email', 'is_active')
+        widgets = {
+            'last_name': forms.TextInput(attrs={'placeholder': 'Фамилия'}),
+            'first_name': forms.TextInput(attrs={'placeholder': 'Имя'}),
+            'middle_name': forms.TextInput(attrs={'placeholder': 'Отчество'}),
+            'position': forms.TextInput(attrs={'placeholder': 'Должность'}),
+            'department': forms.TextInput(attrs={'placeholder': 'Отделение / кафедра'}),
+        }
 
 
 class ScheduleEntryForm(forms.ModelForm):

@@ -260,14 +260,29 @@ class StudentDocument(models.Model):
 
 class ParentInfo(models.Model):
     """Сведения о родителях / законных представителях."""
+    RELATION_CHOICES = [
+        ('mother', 'Мать'),
+        ('father', 'Отец'),
+        ('guardian', 'Опекун / попечитель'),
+        ('representative', 'Законный представитель'),
+    ]
+
     student = models.ForeignKey(
         Student, on_delete=models.CASCADE, related_name='parents',
         verbose_name='Студент'
     )
+    relation = models.CharField(
+        'Степень родства', max_length=20, choices=RELATION_CHOICES, default='mother')
     last_name = models.CharField('Фамилия', max_length=100)
     first_name = models.CharField('Имя', max_length=100)
     middle_name = models.CharField('Отчество', max_length=100, blank=True)
+    birth_date = models.DateField('Дата рождения', null=True, blank=True)
     phone = models.CharField('Телефон', max_length=20, blank=True)
+    email = models.EmailField('E-mail', blank=True)
+    passport_series = models.CharField('Паспорт: серия', max_length=10, blank=True)
+    passport_number = models.CharField('Паспорт: номер', max_length=20, blank=True)
+    address = models.CharField('Адрес регистрации', max_length=300, blank=True)
+    workplace = models.CharField('Место работы', max_length=200, blank=True)
 
     class Meta:
         verbose_name = 'Родитель'
@@ -275,6 +290,10 @@ class ParentInfo(models.Model):
         ordering = ['last_name', 'first_name']
 
     def __str__(self):
+        return f'{self.last_name} {self.first_name} {self.middle_name}'.strip()
+
+    @property
+    def full_name(self):
         return f'{self.last_name} {self.first_name} {self.middle_name}'.strip()
 
 

@@ -58,6 +58,15 @@
         <div class="group-label">Администрирование</div>
         <a href="{% url 'hr:dashboard' %}" class="{% if 'hr' in request.resolver_match.namespace %}active{% endif %}">👔 Кадры</a>
         {% endif %}
+        {% if can_manage_hr or user.is_superuser %}
+        <a href="{% url 'schedule:teacher_list' %}" class="{% if request.resolver_match.url_name in 'teacher_list,teacher_create,teacher_update,teacher_delete' %}active{% endif %}">👨‍🏫 Преподаватели</a>
+        {% endif %}
+        {% if can_manage_contingent or user.is_superuser %}
+        <a href="{% url 'contingent:parent_list' %}" class="{% if 'parent' in request.resolver_match.url_name %}active{% endif %}">👨‍👩‍👦 Родители</a>
+        {% endif %}
+        {% if user.is_superuser or 'director' in user_roles %}
+        <a href="{% url 'accounts:user_list' %}" class="{% if 'user_' in request.resolver_match.url_name %}active{% endif %}">🔑 Пользователи</a>
+        {% endif %}
 
         {% if can_edit_reporting or user.is_superuser %}
         <a href="{% url 'reporting:dashboard' %}" class="{% if 'reporting' in request.resolver_match.namespace %}active{% endif %}">📊 Отчётность</a>

@@ -17,6 +17,12 @@ urlpatterns = [
     path('students/<int:pk>/delete/', views.StudentDeleteView.as_view(), name='student_delete'),
     path('students/<int:pk>/dossier/', views.StudentDossierView.as_view(), name='student_dossier'),
 
+    # Родители (законные представители)
+    path('parents/', views.ParentListView.as_view(), name='parent_list'),
+    path('parents/new/', views.ParentCreateView.as_view(), name='parent_create'),
+    path('parents/<int:pk>/edit/', views.ParentUpdateView.as_view(), name='parent_update'),
+    path('parents/<int:pk>/delete/', views.ParentDeleteView.as_view(), name='parent_delete'),
+
     # Группы
     path('groups/', views.GroupListView.as_view(), name='group_list'),
     path('groups/new/', views.GroupCreateView.as_view(), name='group_create'),

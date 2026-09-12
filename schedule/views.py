@@ -10,17 +10,19 @@ from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.views import View
-from django.views.generic import ListView, DetailView, CreateView, TemplateView, UpdateView
+from django.views.generic import (ListView, DetailView, CreateView, UpdateView,
+                                  DeleteView, TemplateView)
 
 from contingent.models import Group
 
-from .forms import ScheduleBuildForm, ScheduleEntryForm, ScheduleReplaceForm
+from .forms import (ScheduleBuildForm, ScheduleEntryForm, ScheduleReplaceForm,
+                    TeacherForm)
 from .models import (DAY_CHOICES, SLOT_TIMES, Curriculum, Room, ScheduleEntry,
                      Teacher, TeacherUnavailable, WEEK_TYPE_CHOICES)
 from .services import auto_build, check_all_conflicts
 
 from accounts.access import RoleRequiredMixin
-from accounts.roles import SCHEDULE_EDIT
+from accounts.roles import HR_MGMT, HR_VIEW, SCHEDULE_EDIT
 
 
 def _grid(entries, week_type=None):
@@ -206,3 +208,67 @@ class EntryPublishView(RoleRequiredMixin, View):
             request,
             f'Занятие {entry} {"опубликовано" if entry.is_published else "снято с публикации"}.')
         return redirect(request.META.get('HTTP_REFERER') or 'schedule:conflicts')
+
+
+# ---------------- Преподаватели (добавление администратором) ----------------
+
+class TeacherListView(RoleRequiredMixin, ListView):
+    """Список преподавателей."""
+    roles = HR_VIEW
+    model = Teacher
+    template_name = 'schedule/teacher_list.html'
+    context_object_name = 'teachers'
+    paginate_by = 25
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        q = self.request.GET.get('q', '').strip()
+        if q:
+            from django.db.models import Q
+            qs = qs.filter(Q(last_name__icontains=q) | Q(first_name__icontains=q) |
+                           Q(position__icontains=q) | Q(department__icontains=q))
+        return qs
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['q'] = self.request.GET.get('q', '')
+        return ctx
+
+
+class TeacherCreateView(RoleRequiredMixin, CreateView):
+    roles = HR_MGMT
+    model = Teacher
+    form_class = TeacherForm
+    template_name = 'schedule/teacher_form.html'
+    success_url = reverse_lazy('schedule:teacher_list')
+
+    def form_valid(self, form):
+        messages.success(self.request, f'Преподаватель {form.instance.short_name} добавлен.')
+        return super().form_valid(form)
+
+
+class TeacherUpdateView(RoleRequiredMixin, UpdateView):
+    roles = HR_MGMT
+    model = Teacher
+    form_class = TeacherForm
+    template_name = 'schedule/teacher_form.html'
+    success_url = reverse_lazy('schedule:teacher_list')
+
+
+class TeacherDeleteView(RoleRequiredMixin, DeleteView):
+    roles = HR_MGMT
+    model = Teacher
+    template_name = 'schedule/teacher_confirm_delete.html'
+    success_url = reverse_lazy('schedule:teacher_list')
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if self.object.schedule_entries.exists():
+            messages.error(request, f'Преподавателя {self.object.short_name} нельзя удалить: '
+                                    'у него есть занятия в расписании.')
+            return redirect('schedule:teacher_list')
+        return super().post(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Преподаватель удалён.')
+        return super().form_valid(form)

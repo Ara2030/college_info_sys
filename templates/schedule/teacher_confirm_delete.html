@@ -1,0 +1,15 @@
+{% extends 'contingent/base.html' %}
+{% block content %}
+<div class="card p-4" style="max-width:560px;">
+  <h4 class="mb-3">Удаление преподавателя</h4>
+  <p>Удалить преподавателя <b>{{ object.short_name }}</b> ({{ object.position|default:'—' }})?
+    Действие необратимо.</p>
+  <form method="post">
+    {% csrf_token %}
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-danger">Удалить</button>
+      <a href="{% url 'schedule:teacher_list' %}" class="btn btn-outline-secondary">Отмена</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

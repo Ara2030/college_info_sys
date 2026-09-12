@@ -74,3 +74,11 @@ class RegistryExportAdmin(admin.ModelAdmin):
 
 admin.site.register(Department)
 admin.site.register(AcademicLeave)
+
+
+@admin.register(ParentInfo)
+class ParentInfoAdmin(admin.ModelAdmin):
+    list_display = ('full_name', 'relation', 'student', 'phone', 'email')
+    list_filter = ('relation',)
+    search_fields = ('last_name', 'first_name', 'student__last_name', 'phone')
+    autocomplete_fields = ('student',)

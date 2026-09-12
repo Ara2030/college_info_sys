@@ -8,7 +8,11 @@ urlpatterns = [
     # Портал расписания
     path('', views.SchedulePortalView.as_view(), name='group_list'),
     path('groups/<int:pk>/', views.GroupScheduleView.as_view(), name='group_schedule'),
+    path('teachers/', views.TeacherListView.as_view(), name='teacher_list'),
+    path('teachers/new/', views.TeacherCreateView.as_view(), name='teacher_create'),
     path('teachers/<int:pk>/', views.TeacherScheduleView.as_view(), name='teacher_schedule'),
+    path('teachers/<int:pk>/edit/', views.TeacherUpdateView.as_view(), name='teacher_update'),
+    path('teachers/<int:pk>/delete/', views.TeacherDeleteView.as_view(), name='teacher_delete'),
 
     # Занятия
     path('entries/new/', views.EntryCreateView.as_view(), name='entry_create'),

@@ -188,6 +188,22 @@
   ребёнка, преподаватель — карточку и расписание, АУП — панель разделов.
 - Адаптивное меню: разделы показываются в зависимости от роли.
 
+**Администрирование (управление данными)**
+- **Пользователи**: администратор создаёт учётные записи для преподавателей,
+  студентов и родителей, назначает роль и привязывает пользователя
+  к сотруднику, студенту или ребёнку; управление списком.
+- **Преподаватели**: добавление, редактирование и удаление преподавателей
+  (защита от удаления при наличии занятий в расписании).
+- **Родители (законные представители)**: ведение сведений — степень родства,
+  ФИО, дата рождения, паспорт, адрес, телефон, e-mail, место работы;
+  привязка к студенту.
+- **Студенты**: полный CRUD (см. модуль «Контингент студентов»).
+
+**База данных**
+- СУБД PostgreSQL (см. раздел «Настройка»), **47 таблиц**.
+- Полная схема БД: `docs/schema_full.sql` (дамп `pg_dump --schema-only`).
+- Схема модуля контингента на SQL: `schema_contingent.sql`.
+
 **Админ-панель**
 - Полноценная админка Django со списками, фильтрами, поиском и inline-формами.
 
@@ -267,6 +283,8 @@ college_sys_3/
 ├── samples/registry_export_sample.xml  # пример выгрузки
 ├── media/registry_exports/       # сформированные XML-файлы (создаётся автоматически)
 └── docs/                         # документация проекта
+    ├── пояснительная_записка.md / .docx  # пояснительная записка
+    └── schema_full.sql           # полная схема БД (pg_dump --schema-only)
 ```
 
 ---
@@ -387,6 +405,7 @@ python fill_demo_data.py
 | Запросов СМЭВ | 2 |
 | Ролей (групп) | 7 |
 | Демо-пользователей | 5 (director, methodist, teacher1, student1, parent1) |
+| Родителей (законных представителей) | 24 |
 
 ---
 
@@ -413,6 +432,10 @@ python fill_demo_data.py
 | `/orders/<pk>/` | GET | Детали приказа | `order_detail` |
 | `/orders/<pk>/post/` | POST | Проведение приказа | `order_post` |
 | `/orders/<pk>/print/` | GET | Печать приказа (по шаблону типа, номенклатура дел) | `order_print` |
+| `/parents/` | GET | Список родителей / законных представителей | `parent_list` |
+| `/parents/new/` | GET/POST | Добавить родителя | `parent_create` |
+| `/parents/<pk>/edit/` | GET/POST | Редактировать родителя | `parent_update` |
+| `/parents/<pk>/delete/` | GET/POST | Удалить родителя | `parent_delete` |
 | `/exports/` | GET/POST | Список выгрузок + создание новой | `export_list` |
 | `/exports/<pk>/` | GET | Детали выгрузки (XML, контрольная сумма) | `export_detail` |
 | `/exports/<pk>/download/` | GET | Скачивание XML-файла | `export_download` |
@@ -454,7 +477,11 @@ python fill_demo_data.py
 |---|---|---|---|
 | `/schedule/` | GET | Портал расписания: группы, преподаватели, аудитории | `schedule:group_list` |
 | `/schedule/groups/<pk>/` | GET | Расписание группы (сетка дней × пар) | `schedule:group_schedule` |
+| `/schedule/teachers/` | GET | Список преподавателей | `schedule:teacher_list` |
+| `/schedule/teachers/new/` | GET/POST | Добавить преподавателя | `schedule:teacher_create` |
 | `/schedule/teachers/<pk>/` | GET | Расписание преподавателя | `schedule:teacher_schedule` |
+| `/schedule/teachers/<pk>/edit/` | GET/POST | Редактировать преподавателя | `schedule:teacher_update` |
+| `/schedule/teachers/<pk>/delete/` | GET/POST | Удалить преподавателя | `schedule:teacher_delete` |
 | `/schedule/entries/new/` | GET/POST | Добавить занятие (проверка конфликтов) | `schedule:entry_create` |
 | `/schedule/entries/<pk>/replace/` | GET/POST | Замена преподавателя / аудитории | `schedule:entry_replace` |
 | `/schedule/entries/<pk>/publish/` | POST | Публикация / снятие с публикации | `schedule:entry_publish` |
@@ -506,6 +533,9 @@ python fill_demo_data.py
 | `/accounts/login/` | GET/POST | Вход в систему | `accounts:login` |
 | `/accounts/logout/` | POST | Выход | `accounts:logout` |
 | `/accounts/profile/` | GET | Личный кабинет (по роли) | `accounts:profile` |
+| `/accounts/users/` | GET | Пользователи системы (администратор) | `accounts:user_list` |
+| `/accounts/users/new/` | GET/POST | Создать учётную запись (учитель/студент/родитель) | `accounts:user_create` |
+| `/accounts/users/<pk>/delete/` | GET/POST | Удалить учётную запись | `accounts:user_delete` |
 
 **Демо-доступы:**
 
@@ -817,6 +847,51 @@ REGISTRY_API_ENDPOINT = 'https://registry.spo.example.ru/api/v1/students'
 Боковое меню показывает только доступные разделы (context processor
 `accounts.context_processors.roles_context`); в шапке — имя пользователя,
 роли и кнопка выхода.
+
+---
+
+## Администрирование и база данных
+
+### Добавление учителей, студентов и родителей
+
+Раздел **«Администрирование»** в меню (доступен администратору и директору):
+
+| Раздел | URL | Действия |
+|---|---|---|
+| 👨‍🏫 Преподаватели | `/schedule/teachers/` | Добавить, изменить, удалить (с защитой от удаления при наличии занятий), расписание |
+| 👨‍👩‍👦 Родители | `/parents/` | Добавить, изменить, удалить; привязка к студенту |
+| 👥 Студенты | `/students/` | Полный CRUD (модуль 2.1), личные дела |
+| 🔑 Пользователи | `/accounts/users/` | Создать учётную запись для преподавателя / студента / родителя, назначить роль, привязать к объекту |
+
+**Создание учётной записи** (`/accounts/users/new/`): логин, пароль, ФИО,
+e-mail, роль и привязка. Система проверяет, что для студента/сотрудника ещё
+не создана учётная запись, и что привязка соответствует роли.
+
+Пример: чтобы дать студенту доступ к личному кабинету, администратор
+создаёт пользователя с ролью «Студент» и выбирает его в списке студентов.
+
+### База данных
+
+Система работает на **PostgreSQL**. База `college_sys` подключена через
+`config/settings.py` (модуль `psycopg`), содержит **47 таблиц**.
+
+Полная схема БД сохранена в `docs/schema_full.sql` (дамп `pg_dump --schema-only`);
+схема модуля контингента — в `schema_contingent.sql`.
+
+Проверка подключения:
+
+```bash
+python manage.py migrate          # применить миграции
+python manage.py dbshell          # консоль PostgreSQL
+```
+
+Резервная копия / восстановление:
+
+```bash
+pg_dump  -U postgres -d college_sys -f backup.sql          # копия
+psql     -U postgres -d college_sys -f backup.sql          # восстановление
+pg_dump  -U postgres -d college_sys --schema-only -f schema.sql  # только схема
+```
 
 ---
 
