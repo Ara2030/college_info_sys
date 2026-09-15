@@ -11,6 +11,7 @@
 import hashlib
 import io
 import json
+import os
 from datetime import date
 
 from django.conf import settings
@@ -317,8 +318,51 @@ def stat_report_excel(report: StatReport):
     return buf, f'{report.report_type}_report_{report.period_year}.xlsx'
 
 
+def _register_pdf_fonts():
+    """
+    Регистрирует TTF-шрифт с поддержкой кириллицы.
+
+    Встроенные шрифты reportlab (Helvetica) не содержат кириллических глифов —
+    русский текст отображается «чёрными квадратами». Решение — подключить
+    системный TTF-шрифт (Arial / Times New Roman / DejaVu Sans).
+
+    Возвращает кортеж (имя_обычного, имя_жирного).
+    """
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+
+    candidates = [
+        # Windows: Arial (содержит кириллицу)
+        (r'C:\Windows\Fonts\arial.ttf', r'C:\Windows\Fonts\arialbd.ttf'),
+        # Windows: Times New Roman
+        (r'C:\Windows\Fonts\times.ttf', r'C:\Windows\Fonts\timesbd.ttf'),
+        # Windows: Tahoma
+        (r'C:\Windows\Fonts\tahoma.ttf', r'C:\Windows\Fonts\tahomabd.ttf'),
+        # Linux/macOS: DejaVu
+        ('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+         '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'),
+        ('/Library/Fonts/Arial.ttf', '/Library/Fonts/Arial Bold.ttf'),
+    ]
+
+    regular_name, bold_name = 'AppFont', 'AppFont-Bold'
+    for regular_path, bold_path in candidates:
+        if not os.path.exists(regular_path):
+            continue
+        try:
+            pdfmetrics.registerFont(TTFont(regular_name, regular_path))
+            if os.path.exists(bold_path):
+                pdfmetrics.registerFont(TTFont(bold_name, bold_path))
+            else:
+                bold_name = regular_name
+            return regular_name, bold_name
+        except Exception:  # noqa: BLE001 — пробуем следующий шрифт
+            continue
+    # Резервный вариант: стандартный шрифт (кириллица может не отобразиться)
+    return 'Helvetica', 'Helvetica-Bold'
+
+
 def stat_report_pdf(report: StatReport):
-    """Экспорт данных отчёта в PDF через reportlab."""
+    """Экспорт данных отчёта в PDF через reportlab (с поддержкой кириллицы)."""
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -326,22 +370,26 @@ def stat_report_pdf(report: StatReport):
     from reportlab.platypus import (Paragraph, SimpleDocTemplate, Spacer, Table,
                                     TableStyle)
 
+    font_regular, font_bold = _register_pdf_fonts()
+
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A4,
                             leftMargin=15 * mm, rightMargin=15 * mm,
                             topMargin=15 * mm, bottomMargin=15 * mm)
 
-    styles = getSampleStyleSheet()
-    title_style = ParagraphStyle('Title2', parent=styles['Title'], fontSize=14,
-                                 spaceAfter=6)
-    h_style = ParagraphStyle('H', parent=styles['Heading2'], fontSize=11,
-                             spaceBefore=8, spaceAfter=4)
+    base = getSampleStyleSheet()
+    normal_style = ParagraphStyle('AppNormal', parent=base['Normal'],
+                                  fontName=font_regular, fontSize=10, leading=14)
+    title_style = ParagraphStyle('AppTitle', parent=base['Title'], fontSize=14,
+                                 fontName=font_bold, spaceAfter=6)
+    h_style = ParagraphStyle('AppH', parent=base['Heading2'], fontSize=11,
+                             fontName=font_bold, spaceBefore=8, spaceAfter=4)
     data = json.loads(report.data_json)
 
     story = [Paragraph(report.get_report_type_display(), title_style),
              Paragraph(f'Отчётный год: {report.period_year} · '
                        f'Сформирован: {report.created_at:%d.%m.%Y %H:%M}',
-                       styles['Normal']),
+                       normal_style),
              Spacer(1, 4 * mm)]
 
     for section, values in data.items():
@@ -351,7 +399,8 @@ def stat_report_pdf(report: StatReport):
             table = Table([['Показатель', 'Значение']] + rows,
                           colWidths=[110 * mm, 60 * mm])
             table.setStyle(TableStyle([
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTNAME', (0, 0), (-1, 0), font_bold),
+                ('FONTNAME', (0, 1), (-1, -1), font_regular),
                 ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2563eb')),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
                 ('GRID', (0, 0), (-1, -1), 0.4, colors.grey),
@@ -362,7 +411,7 @@ def stat_report_pdf(report: StatReport):
             ]))
             story.append(table)
         else:
-            story.append(Paragraph(f'{section}: {values}', styles['Normal']))
+            story.append(Paragraph(f'{section}: {values}', normal_style))
 
     doc.build(story)
     buf.seek(0)

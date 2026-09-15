@@ -1062,6 +1062,32 @@ django.setup()
 **4. После правки Python-кода сервер не перезагружается**
 Сервер запущен с флагом `--noreload` — перезапустите вручную.
 
+**5. В PDF вместо русского текста — чёрные квадраты**
+
+Встроенный шрифт reportlab (Helvetica) не содержит кириллических глифов.
+В проекте эта проблема решена: `reporting/services.py` регистрирует системный
+TTF-шрифт (Arial / Times New Roman / DejaVu Sans) через `_register_pdf_fonts()`
+и использует его для всего текста и таблиц.
+
+Если квадраты появились снова — проверьте наличие файла шрифта:
+```
+C:\Windows\Fonts\arial.ttf        (Windows)
+/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf   (Linux)
+```
+и убедитесь, что `_register_pdf_fonts()` возвращает не `Helvetica`.
+
+**6. `start.bat` запускается и сразу закрывается / ничего не происходит**
+
+Причины и решения:
+- файл открыт в UTF-8 с BOM или с переводами строк LF — `cmd.exe` требует
+  **CRLF и кодировку CP866** (в проекте уже исправлено);
+- проверьте, что запускается `start.bat` из корня проекта (он вызывает
+  `scripts\start.ps1`);
+- запустите вручную, чтобы увидеть сообщения об ошибке:
+  ```powershell
+  powershell -NoProfile -ExecutionPolicy Bypass -File scripts\start.ps1
+  ```
+
 ---
 
 ## Дальнейшее развитие
