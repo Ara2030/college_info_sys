@@ -66,6 +66,7 @@
         {% endif %}
         {% if user.is_superuser or 'director' in user_roles %}
         <a href="{% url 'accounts:user_list' %}" class="{% if 'user_' in request.resolver_match.url_name %}active{% endif %}">🔑 Пользователи</a>
+        <a href="{% url 'accounts:security_log' %}" class="{% if request.resolver_match.url_name == 'security_log' %}active{% endif %}">🛡 Безопасность</a>
         {% endif %}
 
         {% if can_edit_reporting or user.is_superuser %}

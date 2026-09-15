@@ -1,4 +1,5 @@
 {% extends 'contingent/base.html' %}
+{% load security %}
 {% block content %}
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
   <h3 class="mb-0">
@@ -22,12 +23,13 @@
         <tr><th class="text-muted fw-normal">Отделение</th><td>{{ student.group.department|default:'—' }}</td></tr>
         <tr><th class="text-muted fw-normal">Курс</th><td>{{ student.course }}</td></tr>
         <tr><th class="text-muted fw-normal">Дата рождения</th><td>{{ student.birth_date|date:'d.m.Y' }}</td></tr>
-        <tr><th class="text-muted fw-normal">СНИЛС</th><td>{{ student.snils|default:'—' }}</td></tr>
+        <tr><th class="text-muted fw-normal">СНИЛС</th><td>{{ student.snils|mask_snils|default:'—' }}
+          <span class="badge bg-light text-dark ms-1" title="Полные данные доступны в личном деле и печатных формах">🔒 маскировано</span></td></tr>
         <tr><th class="text-muted fw-normal">№ личного дела</th><td>{{ student.student_card_number|default:'—' }}</td></tr>
         <tr><th class="text-muted fw-normal">Дата зачисления</th><td>{{ student.enroll_date|date:'d.m.Y'|default:'—' }}</td></tr>
         <tr><th class="text-muted fw-normal">Адрес</th><td>{{ student.full_address|default:'—' }}</td></tr>
-        <tr><th class="text-muted fw-normal">Документ об образовании</th><td>{{ student.education_doc_series }} {{ student.education_doc_number }}{% if student.education_doc_org %}<br><small class="text-muted">{{ student.education_doc_org }}</small>{% endif %}</td></tr>
-        <tr><th class="text-muted fw-normal">Соц. карта</th><td>{{ student.social_card_number|default:'—' }}{% if student.social_card_issued %} <small class="text-muted">({{ student.social_card_issued|date:'d.m.Y' }})</small>{% endif %}</td></tr>
+        <tr><th class="text-muted fw-normal">Документ об образовании</th><td>{{ student.education_doc_series }} {{ student.education_doc_number|mask_tail }}{% if student.education_doc_org %}<br><small class="text-muted">{{ student.education_doc_org }}</small>{% endif %}</td></tr>
+        <tr><th class="text-muted fw-normal">Соц. карта</th><td>{{ student.social_card_number|mask_tail }}{% if student.social_card_issued %} <small class="text-muted">({{ student.social_card_issued|date:'d.m.Y' }})</small>{% endif %}</td></tr>
         <tr><th class="text-muted fw-normal">Телефон</th><td>{{ student.phone|default:'—' }}</td></tr>
         <tr><th class="text-muted fw-normal">E-mail</th><td>{{ student.email|default:'—' }}</td></tr>
       </table>

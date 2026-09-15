@@ -9,18 +9,22 @@
       родитель — успеваемость ребёнка;
       сотрудник/преподаватель — расписание преподавателя, карточка.
 """
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.models import Group, User
 from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
+from django.utils import timezone
 from django.views.generic import (CreateView, DeleteView, ListView, TemplateView,
                                   UpdateView)
 
 from .access import RoleRequiredMixin, has_role
 from .forms import UserCreateForm
-from .models import UserProfile
+from .middleware import get_client_ip
+from .models import AuditLog, LoginAttempt, UserProfile
 from .roles import (ROLE_DIRECTOR, ROLE_LABELS, ROLE_PARENT, ROLE_STUDENT,
                     ROLE_TEACHER, ACADEMIC_STAFF)
 
@@ -29,8 +33,65 @@ USER_MGMT = [ROLE_DIRECTOR]
 
 
 class AppLoginView(LoginView):
+    """Вход в систему с защитой от перебора паролей (brute-force)."""
     template_name = 'accounts/login.html'
     redirect_authenticated_user = True
+
+    # Демонстрационные учётные записи для быстрого входа (только при DEBUG)
+    DEMO_ACCOUNTS = [
+        {'label': 'Администратор', 'username': 'admin', 'password': 'admin123',
+         'icon': '⚙️', 'hint': 'полный доступ'},
+        {'label': 'Директор', 'username': 'director', 'password': 'director123',
+         'icon': '👔', 'hint': 'руководство'},
+        {'label': 'Методист', 'username': 'methodist', 'password': 'methodist123',
+         'icon': '📋', 'hint': 'учебная часть'},
+        {'label': 'Преподаватель', 'username': 'teacher1', 'password': 'teacher123',
+         'icon': '👨‍🏫', 'hint': 'журнал'},
+        {'label': 'Студент', 'username': 'student1', 'password': 'student123',
+         'icon': '🎓', 'hint': 'личный кабинет'},
+        {'label': 'Родитель', 'username': 'parent1', 'password': 'parent123',
+         'icon': '👨‍👩‍👦', 'hint': 'успеваемость ребёнка'},
+    ]
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        # Кнопки быстрого входа показываем только в режиме отладки (демонстрация)
+        if settings.DEBUG:
+            ctx['demo_accounts'] = self.DEMO_ACCOUNTS
+        return ctx
+
+    def post(self, request, *args, **kwargs):
+        from datetime import timedelta
+        from .models import AuditLog as AL
+
+        # Быстрый вход: подстановка логина/пароля из демо-кнопки (только DEBUG)
+        if settings.DEBUG and request.POST.get('demo_user'):
+            for acc in self.DEMO_ACCOUNTS:
+                if acc['username'] == request.POST.get('demo_user'):
+                    request.POST = request.POST.copy()
+                    request.POST['username'] = acc['username']
+                    request.POST['password'] = acc['password']
+                    break
+
+        username = request.POST.get('username', '')
+        ip = get_client_ip(request)
+        window = timezone.now() - timedelta(minutes=settings.LOGIN_ATTEMPTS_WINDOW)
+        fails = LoginAttempt.objects.filter(
+            success=False, created_at__gte=window,
+        ).filter(Q(username=username) | Q(ip_address=ip)).count()
+
+        if fails >= settings.LOGIN_ATTEMPTS_LIMIT:
+            AL.objects.create(
+                username=username, action=AL.Action.LOCKOUT,
+                description=f'Блокировка входа: {fails} неудачных попыток',
+                ip_address=ip, path=request.path, method='POST',
+                user_agent=request.META.get('HTTP_USER_AGENT', '')[:300])
+            return render(request, self.template_name, {
+                'lockout': True,
+                'lockout_minutes': settings.LOGIN_LOCKOUT_MINUTES,
+                'attempts': fails,
+            }, status=429)
+        return super().post(request, *args, **kwargs)
 
 
 class AppLogoutView(LogoutView):
@@ -169,3 +230,28 @@ class UserDeleteView(RoleRequiredMixin, DeleteView):
     def form_valid(self, form):
         messages.success(self.request, 'Учётная запись удалена.')
         return super().form_valid(form)
+
+
+# ---------------- Безопасность: журнал аудита и попытки входа ----------------
+
+class SecurityLogView(RoleRequiredMixin, TemplateView):
+    """Журнал безопасности: аудит действий и попытки входа."""
+    roles = USER_MGMT
+    template_name = 'accounts/security_log.html'
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        action = self.request.GET.get('action')
+        logs = AuditLog.objects.select_related('user').order_by('-created_at')
+        if action:
+            logs = logs.filter(action=action)
+        ctx['logs'] = logs[:200]
+        ctx['selected_action'] = action or ''
+        ctx['actions'] = AuditLog.Action.choices
+        ctx['attempts'] = LoginAttempt.objects.order_by('-created_at')[:50]
+        ctx['failed_count'] = LoginAttempt.objects.filter(success=False).count()
+        ctx['access_denied_count'] = AuditLog.objects.filter(
+            action=AuditLog.Action.ACCESS_DENIED).count()
+        ctx['lockout_count'] = AuditLog.objects.filter(
+            action=AuditLog.Action.LOCKOUT).count()
+        return ctx

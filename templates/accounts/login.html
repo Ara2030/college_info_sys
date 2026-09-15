@@ -19,7 +19,12 @@
     <div class="text-muted small">Информационная система колледжа (СПО)</div>
   </div>
 
-  {% if form.errors %}
+  {% if lockout %}
+  <div class="alert alert-danger py-2 small">
+    <b>Вход временно заблокирован.</b><br>
+    Превышено число попыток ({{ attempts }}). Повторите через {{ lockout_minutes }} минут.
+  </div>
+  {% elif form.errors %}
   <div class="alert alert-danger py-2 small">Неверный логин или пароль.</div>
   {% endif %}
 
@@ -28,22 +33,39 @@
     <input type="hidden" name="next" value="{{ next }}">
     <div class="mb-3">
       <label class="form-label small">Логин</label>
-      <input type="text" name="username" class="form-control" autofocus required>
+      <input type="text" name="username" class="form-control" autofocus required
+             autocomplete="username">
     </div>
     <div class="mb-4">
       <label class="form-label small">Пароль</label>
-      <input type="password" name="password" class="form-control" required>
+      <input type="password" name="password" class="form-control" required
+             autocomplete="current-password">
     </div>
     <button type="submit" class="btn btn-primary w-100">Войти</button>
   </form>
 
-  <div class="text-muted small mt-4">
-    <div class="fw-semibold mb-1">Демо-доступы:</div>
-    <div>admin / admin123 — администратор</div>
-    <div>director / director123 — директор</div>
-    <div>teacher1 / teacher123 — преподаватель</div>
-    <div>student1 / student123 — студент</div>
-    <div>parent1 / parent123 — родитель</div>
+  {% if demo_accounts %}
+  <div class="mt-4">
+    <div class="text-center text-muted small mb-2">— Быстрый вход (демонстрация) —</div>
+    <div class="row g-2">
+      {% for acc in demo_accounts %}
+      <div class="col-6">
+        <form method="post" action="{% url 'accounts:login' %}">
+          {% csrf_token %}
+          <input type="hidden" name="demo_user" value="{{ acc.username }}">
+          <button type="submit" class="btn btn-outline-secondary btn-sm w-100 text-start">
+            {{ acc.icon }} {{ acc.label }}<br>
+            <span class="text-muted" style="font-size:11px">{{ acc.hint }}</span>
+          </button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="text-muted small mt-3 text-center">
+    🔒 Вход контролируется: аудит и защита от перебора паролей
   </div>
 </div>
 </body>

@@ -13,4 +13,7 @@ urlpatterns = [
     path('users/', views.UserListView.as_view(), name='user_list'),
     path('users/new/', views.UserCreateView.as_view(), name='user_create'),
     path('users/<int:pk>/delete/', views.UserDeleteView.as_view(), name='user_delete'),
+
+    # Безопасность
+    path('security/', views.SecurityLogView.as_view(), name='security_log'),
 ]
