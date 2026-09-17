@@ -98,15 +98,24 @@ class LessonCreateView(RoleRequiredMixin, CreateView):
         return redirect('journal:lesson_detail', pk=lesson.pk)
 
     def _save_marks(self, lesson, formset):
+        """Сохраняет оценки и посещаемость по строкам формсета.
+
+        Пустая оценка не создаёт запись (устраняет «мусорные» строки в журнале),
+        а ранее выставленная — удаляется.
+        """
         for form in formset.forms:
             data = form.cleaned_data
             if not data.get('student'):
                 continue
             student = data['student']
-            Grade.objects.update_or_create(
-                lesson=lesson, student=student,
-                defaults={'value': data.get('value', '') or ''},
-            )
+            value = (data.get('value') or '').strip()
+            if value:
+                Grade.objects.update_or_create(
+                    lesson=lesson, student=student,
+                    defaults={'value': value},
+                )
+            else:
+                Grade.objects.filter(lesson=lesson, student=student).delete()
             Attendance.objects.update_or_create(
                 lesson=lesson, student=student,
                 defaults={'present': data.get('present', True)},

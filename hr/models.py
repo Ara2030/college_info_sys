@@ -39,7 +39,7 @@ class Employee(models.Model):
     gender = models.CharField('Пол', max_length=1, choices=Gender.choices, blank=True)
     birth_date = models.DateField('Дата рождения', null=True, blank=True)
     birth_place = models.CharField('Место рождения', max_length=200, blank=True)
-    citizenship = models.CharField('Гражданство', max_length=100, default='Россия')
+    citizenship = models.CharField('Гражданство', max_length=100, default='Россия', blank=True)
 
     # Документы
     snils = models.CharField('СНИЛС', max_length=14, blank=True)

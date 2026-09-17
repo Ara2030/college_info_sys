@@ -117,7 +117,7 @@ class Student(models.Model):
     birth_date = models.DateField('Дата рождения')
     gender = models.CharField('Пол', max_length=1, choices=GENDER_CHOICES, blank=True)
     snils = models.CharField('СНИЛС', max_length=14, unique=True, validators=[SNILS_REGEX])
-    citizenship = models.CharField('Гражданство', max_length=100, default='Россия')
+    citizenship = models.CharField('Гражданство', max_length=100, default='Россия', blank=True)
 
     group = models.ForeignKey(
         Group, on_delete=models.PROTECT, related_name='students',
