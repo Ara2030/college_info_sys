@@ -1,0 +1,46 @@
+{% extends 'contingent/base.html' %}
+{% block title %}Тарификация — {{ period.name }}{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h3 class="mb-0">Тарификация: {{ period.name }}
+    <span class="badge bg-primary">{{ period.items.count }} строк</span>
+  </h3>
+  <div class="d-flex gap-2">
+    <a href="{% url 'hr:tarification_item_create' period.pk %}" class="btn btn-outline-primary">+ Строка</a>
+    <a href="{% url 'hr:salary_create' %}" class="btn btn-outline-secondary">📤 Выгрузка в 1С</a>
+  </div>
+</div>
+
+<div class="card p-3 mb-3">
+  <div class="row text-center">
+    <div class="col"><div class="text-muted small">Учебный год</div><div class="fw-semibold">{{ period.year_start }}/{{ period.year_start|add:"1" }}</div></div>
+    <div class="col"><div class="text-muted small">Преподавателей</div><div class="fw-semibold">{{ by_employee|length }}</div></div>
+    <div class="col"><div class="text-muted small">Часов в год</div><div class="fw-semibold">{{ period.total_hours }}</div></div>
+    <div class="col"><div class="text-muted small">Статус</div><div class="fw-semibold">{{ period.get_status_display }}</div></div>
+  </div>
+</div>
+
+{% for key, block in by_employee.items %}
+<div class="card p-3 mb-3">
+  <div class="d-flex justify-content-between">
+    <span class="fw-semibold">{{ block.employee.full_name }}</span>
+    <span class="text-muted small">{{ block.hours }} ч/год</span>
+  </div>
+  <table class="table table-sm mb-0 mt-2">
+    <thead><tr><th>Дисциплина</th><th class="text-center">Часов в неделю</th><th class="text-center">Часов в год</th><th>Группы</th></tr></thead>
+    <tbody>
+      {% for i in block.items %}
+      <tr>
+        <td>{{ i.subject.name }}</td>
+        <td class="text-center">{{ i.hours_per_week }}</td>
+        <td class="text-center fw-semibold">{{ i.total_hours }}</td>
+        <td class="text-muted small">{{ i.groups|default:'—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% empty %}
+<div class="card p-5 text-center text-muted">Строки тарификации не добавлены</div>
+{% endfor %}
+{% endblock %}

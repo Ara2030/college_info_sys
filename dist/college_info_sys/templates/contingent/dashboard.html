@@ -1,0 +1,97 @@
+{% extends 'contingent/base.html' %}
+{% block title %}Дашборд — ИС колледжа{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h3 mb-0">Дашборд</h1>
+  <span class="text-muted small">Сводная статистика по контингенту</span>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="card shadow-sm text-center p-3">
+      <div class="display-6 fw-semibold text-primary">{{ total_students }}</div>
+      <div class="text-muted small">Студентов</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card shadow-sm text-center p-3">
+      <div class="display-6 fw-semibold text-success">{{ total_groups }}</div>
+      <div class="text-muted small">Действующих групп</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card shadow-sm text-center p-3">
+      <div class="display-6 fw-semibold text-info">{{ total_departments }}</div>
+      <div class="text-muted small">Отделений</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card shadow-sm text-center p-3">
+      <div class="display-6 fw-semibold text-warning">{{ total_specialties }}</div>
+      <div class="text-muted small">Специальностей</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-5">
+    <div class="card shadow-sm p-3 mb-3">
+      <h6 class="text-primary mb-3">Статусы студентов</h6>
+      <table class="table table-sm mb-0">
+        <tbody>
+          <tr>
+            <td>🟢 Обучается</td>
+            <td class="text-end fw-semibold">{{ students_by_status.study|default:0 }}</td>
+          </tr>
+          <tr>
+            <td>🟡 Академический отпуск</td>
+            <td class="text-end fw-semibold">{{ students_by_status.academic_leave|default:0 }}</td>
+          </tr>
+          <tr>
+            <td>🔴 Отчислен</td>
+            <td class="text-end fw-semibold">{{ students_by_status.expelled|default:0 }}</td>
+          </tr>
+          <tr>
+            <td>⚪ Окончил обучение</td>
+            <td class="text-end fw-semibold">{{ students_by_status.graduated|default:0 }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card shadow-sm p-3">
+      <h6 class="text-primary mb-3">Приказы и выгрузки</h6>
+      <table class="table table-sm mb-0">
+        <tbody>
+          <tr><td>Приказов всего</td><td class="text-end fw-semibold">{{ total_orders }}</td></tr>
+          <tr><td class="ps-4">— черновики</td><td class="text-end">{{ draft_orders }}</td></tr>
+          <tr><td class="ps-4">— проведённые</td><td class="text-end">{{ posted_orders }}</td></tr>
+          <tr><td>Выгрузок в Реестр СПО</td><td class="text-end fw-semibold">{{ total_exports }}</td></tr>
+          <tr><td class="ps-4">— готово к отправке</td><td class="text-end">{{ ready_exports }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card shadow-sm p-3">
+      <h6 class="text-primary mb-3">Самые наполненные группы</h6>
+      <table class="table table-sm mb-0">
+        <thead><tr><th>Группа</th><th>Специальность</th><th>Отделение</th><th class="text-end">Студентов</th></tr></thead>
+        <tbody>
+          {% for g in groups_top %}
+          <tr>
+            <td><a href="{% url 'contingent:group_detail' g.pk %}" class="text-decoration-none fw-semibold">{{ g.name }}</a></td>
+            <td class="text-muted small">{{ g.specialty.code }}</td>
+            <td class="text-muted small">{{ g.department.name }}</td>
+            <td class="text-end">{{ g.count }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="text-center text-muted py-3">Групп пока нет</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

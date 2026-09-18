@@ -1,0 +1,66 @@
+{% extends 'contingent/base.html' %}
+{% load schedule_extras %}
+{% block title %}Расписание преподавателя {{ teacher.short_name }}{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h3 class="mb-0">Расписание — {{ teacher.short_name }}
+    <span class="badge bg-primary">{{ teacher.position|default:'преподаватель' }}</span>
+  </h3>
+  <a href="{% url 'schedule:group_list' %}" class="btn btn-outline-secondary">← Портал</a>
+</div>
+
+<div class="card p-3 mb-3">
+  <form method="get" class="row g-2 align-items-end">
+    <div class="col-auto">
+      <label class="form-label small mb-1">Семестр</label>
+      <select name="semester" class="form-select form-select-sm" onchange="this.form.submit()">
+        {% for s in "123456" %}
+        <option value="{{ s }}" {% if semester == s %}selected{% endif %}>Семестр {{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </form>
+</div>
+
+{% if unavailable %}
+<div class="alert alert-warning small">
+  <b>Ограничения времени работы:</b>
+  {% for u in unavailable %}{{ u.get_day_of_week_display }} ({{ u.lesson_number }} пара){% if not forloop.last %}, {% endif %}{% endfor %}
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-bordered align-middle mb-0">
+      <thead>
+        <tr><th class="text-center">Пара</th><th class="text-center">Время</th>
+          {% for d, dname in days %}<th class="text-center">{{ dname }}</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for slot, time in slots %}
+        <tr>
+          <td class="text-center fw-semibold">{{ slot }}</td>
+          <td class="text-muted small text-nowrap">{{ time }}</td>
+          {% for d, dname in days %}
+          <td style="min-width:150px" class="align-top">
+            {% for day, cells in grid.items %}{% if day == d %}
+              {% with cell=cells|get_item:slot %}
+                {% if cell %}
+                <div class="border-start border-3 ps-2 border-primary">
+                  <div class="fw-semibold small">{{ cell.subject.name }}</div>
+                  <div class="text-muted small">{{ cell.group.name }} · ауд. {{ cell.room.name }}</div>
+                  {% if cell.week_type != 'every' %}<span class="badge bg-light text-dark">{{ cell.get_week_type_display }}</span>{% endif %}
+                </div>
+                {% else %}<span class="text-muted small">—</span>{% endif %}
+              {% endwith %}
+            {% endif %}{% endfor %}
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

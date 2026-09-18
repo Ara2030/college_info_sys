@@ -1,0 +1,62 @@
+{% extends 'contingent/base.html' %}
+{% block title %}REST API Реестра студентов СПО{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h3 class="mb-0">Выгрузка в Реестр студентов СПО (REST API)</h3>
+  <a href="{% url 'reporting:dashboard' %}" class="btn btn-outline-secondary">← Отчётность</a>
+</div>
+
+<div class="alert alert-info small">
+  Отправка выгрузки контингента (XML) на REST-эндпоинт реестра.
+  Если реальное подключение не настроено (<code>REGISTRY_API_ENABLED=False</code>),
+  запрос фиксируется в журнале в протокольном режиме (заглушка).
+</div>
+
+<div class="card p-4 mb-3">
+  <h6 class="text-primary mb-3">Отправить выгрузку</h6>
+  <form method="post" class="row g-2 align-items-end">
+    {% csrf_token %}
+    <div class="col-md-8">
+      <label class="form-label small mb-1">Выберите сформированную выгрузку (XML)</label>
+      <select name="export_id" class="form-select" required>
+        {% for e in exports %}
+        <option value="{{ e.pk }}">{{ e.file_name }} — {{ e.student_count }} студентов, {{ e.created_at|date:'d.m.Y H:i' }}</option>
+        {% empty %}
+        <option value="">Нет выгрузок — сформируйте на странице «Выгрузка в Реестр СПО»</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-4">
+      <button type="submit" class="btn btn-primary w-100">📡 Отправить (POST)</button>
+    </div>
+  </form>
+  <div class="text-muted small mt-2">Конечная точка: {{ request.scheme }}://… (задаётся в settings.REGISTRY_API_ENDPOINT)</div>
+</div>
+
+<div class="card p-3">
+  <h6 class="text-primary mb-3">Журнал отправок</h6>
+  <div class="table-responsive">
+    <table class="table table-sm mb-0">
+      <thead><tr><th>Время</th><th>Точка</th><th>Код</th><th>Статус</th><th>Ответ</th></tr></thead>
+      <tbody>
+        {% for l in logs %}
+        <tr>
+          <td class="text-nowrap">{{ l.created_at|date:'d.m.Y H:i' }}</td>
+          <td class="text-muted small" style="max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ l.endpoint }}</td>
+          <td>{{ l.status_code|default:'—' }}</td>
+          <td>
+            {% if l.status == 'ok' %}<span class="badge bg-success">Успешно</span>
+            {% elif l.status == 'mock' %}<span class="badge bg-warning text-dark">Заглушка</span>
+            {% elif l.status == 'error' %}<span class="badge bg-danger">Ошибка</span>
+            {% else %}<span class="badge bg-secondary">Нет подключения</span>{% endif %}
+          </td>
+          <td class="text-muted small" style="max-width:300px;">{{ l.response|truncatechars:80 }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-center text-muted py-3">Отправок не было</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

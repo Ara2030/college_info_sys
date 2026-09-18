@@ -1,0 +1,81 @@
+{% extends 'contingent/base.html' %}
+{% block title %}Отчётность и интеграция{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h1 class="h3 mb-0">Отчётность и интеграция</h1>
+  <div class="d-flex gap-2">
+    <a href="{% url 'reporting:stat_create' %}" class="btn btn-primary">+ Сформировать отчёт</a>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="card shadow-sm text-center p-3">
+      <div class="display-6 fw-semibold text-primary">{{ reports }}</div>
+      <div class="text-muted small">Статистических отчётов</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card shadow-sm text-center p-3">
+      <div class="display-6 fw-semibold text-info">{{ exports }}</div>
+      <div class="text-muted small">Выгрузок в Реестр СПО</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card shadow-sm text-center p-3">
+      <div class="display-6 fw-semibold text-success">{{ logs }}</div>
+      <div class="text-muted small">Записей интеграций</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card shadow-sm text-center p-3">
+      <div class="display-6 fw-semibold text-warning">{{ smev }}</div>
+      <div class="text-muted small">Запросов СМЭВ</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card p-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="text-primary mb-0">Последние отчёты</h6>
+        <a href="{% url 'reporting:stat_list' %}" class="small">все →</a>
+      </div>
+      <table class="table table-sm mb-0">
+        <thead><tr><th>Отчёт</th><th>Год</th><th>Статус</th><th>Дата</th></tr></thead>
+        <tbody>
+          {% for r in recent_reports %}
+          <tr>
+            <td><a href="{% url 'reporting:stat_detail' r.pk %}" class="text-decoration-none">{{ r.get_report_type_display }}</a></td>
+            <td>{{ r.period_year }}</td>
+            <td><span class="badge bg-success">{{ r.get_status_display }}</span></td>
+            <td>{{ r.created_at|date:'d.m.Y H:i' }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="text-center text-muted py-3">Отчётов ещё нет</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card p-3 mb-3">
+      <h6 class="text-primary mb-3">Интеграции</h6>
+      <div class="d-grid gap-2">
+        <a href="{% url 'reporting:registry_api' %}" class="btn btn-outline-primary text-start">📡 REST API Реестра СПО</a>
+        <a href="{% url 'reporting:smev' %}" class="btn btn-outline-primary text-start">🔗 СМЭВ (госреестры)</a>
+        <a href="{% url 'reporting:logs' %}" class="btn btn-outline-secondary text-start">📋 Журнал интеграций</a>
+        <a href="{% url 'contingent:export_list' %}" class="btn btn-outline-secondary text-start">🔄 Выгрузка в Реестр СПО (XML)</a>
+      </div>
+    </div>
+    <div class="card p-3">
+      <h6 class="text-primary mb-3">Экспорт данных</h6>
+      <div class="text-muted small mb-2">Отчёты экспортируются в Excel (.xlsx) и PDF для передачи в учредитель и надзорные органы.</div>
+      <div class="d-grid gap-2">
+        <a href="{% url 'reporting:stat_list' %}" class="btn btn-sm btn-outline-secondary">Выбрать отчёт → Excel/PDF</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

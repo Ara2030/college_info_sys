@@ -1,0 +1,90 @@
+{% extends 'contingent/base.html' %}
+{% block title %}Успеваемость — {{ student.full_name }}{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h3 class="mb-0">Успеваемость: {{ student.full_name }}</h3>
+  <div class="d-flex gap-2">
+    <a href="javascript:window.print()" class="btn btn-outline-secondary">🖨 Печать</a>
+    <a href="{% url 'journal:group_report' student.group.pk %}" class="btn btn-outline-secondary">← Отчёт по группе</a>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-6 col-lg-3">
+    <div class="card shadow-sm text-center p-3">
+      <div class="display-6 fw-semibold text-info">{{ avg_grade|default:'—' }}</div>
+      <div class="text-muted small">Средний балл</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card shadow-sm text-center p-3">
+      <div class="display-6 fw-semibold text-success">{{ attendance_percent|default:'—' }}%</div>
+      <div class="text-muted small">Посещаемость ({{ present_total }}/{{ lessons_total }})</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card shadow-sm text-center p-3">
+      <div class="display-6 fw-semibold text-primary">{{ grades|length }}</div>
+      <div class="text-muted small">Оценок получено</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card shadow-sm text-center p-3">
+      {% if is_low %}
+      <div class="display-6 fw-semibold text-danger">⚠</div>
+      <div class="text-muted small">Низкая успеваемость</div>
+      {% else %}
+      <div class="display-6 fw-semibold text-success">✓</div>
+      <div class="text-muted small">Успеваемость в норме</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="card p-3 mb-3">
+  <h6 class="text-primary mb-3">Оценки по дисциплинам</h6>
+  <div class="table-responsive">
+    <table class="table table-sm mb-0">
+      <thead><tr><th>Дата</th><th>Дисциплина</th><th>Тема</th><th class="text-center">Оценка</th></tr></thead>
+      <tbody>
+        {% for g in grades %}
+        <tr>
+          <td class="text-nowrap">{{ g.lesson.date|date:'d.m.Y' }}</td>
+          <td class="fw-semibold">{{ g.lesson.subject.name }}</td>
+          <td class="text-muted small">{{ g.lesson.topic|default:'—' }}</td>
+          <td class="text-center">
+            {% if g.value == '5' %}<span class="badge bg-success">5</span>
+            {% elif g.value == '4' %}<span class="badge bg-info text-dark">4</span>
+            {% elif g.value == '3' %}<span class="badge bg-warning text-dark">3</span>
+            {% elif g.value == '2' %}<span class="badge bg-danger">2</span>
+            {% else %}<span class="badge bg-danger">н/а</span>{% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="text-center text-muted py-3">Оценок пока нет</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card p-3">
+  <h6 class="text-primary mb-3">Посещаемость занятий</h6>
+  <div class="table-responsive">
+    <table class="table table-sm mb-0">
+      <thead><tr><th>Дата</th><th>Дисциплина</th><th class="text-center">Присутствовал</th></tr></thead>
+      <tbody>
+        {% for a in attendance %}
+        <tr>
+          <td class="text-nowrap">{{ a.lesson.date|date:'d.m.Y' }}</td>
+          <td class="fw-semibold">{{ a.lesson.subject.name }}</td>
+          <td class="text-center">{% if a.present %}✅{% else %}❌{% endif %}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="3" class="text-center text-muted py-3">Занятий не посещено / не отмечено</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

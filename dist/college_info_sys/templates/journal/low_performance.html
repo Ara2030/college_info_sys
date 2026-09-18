@@ -1,0 +1,59 @@
+{% extends 'contingent/base.html' %}
+{% block title %}Уведомления о низкой успеваемости{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h3 class="mb-0">Уведомления преподавателям</h3>
+  <span class="text-muted small">Студенты с риском: посещаемость &lt; 60% или средний балл &lt; 3,5</span>
+</div>
+
+<div class="card p-3 mb-3">
+  <form method="get" class="row g-2 align-items-end">
+    <div class="col-auto">
+      <label class="form-label small mb-1">Группа</label>
+      <select name="group" class="form-select form-select-sm" onchange="this.form.submit()">
+        <option value="">Все группы</option>
+        {% for g in groups %}
+        <option value="{{ g.pk }}" {% if selected_group == g.pk %}selected{% endif %}>{{ g.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-sm btn-outline-secondary">Фильтр</button>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead><tr><th>№</th><th>Студент</th><th>Группа</th><th>Специальность</th><th class="text-center">Средний балл</th><th class="text-center">Посещаемость</th><th class="text-center">Причина</th></tr></thead>
+      <tbody>
+      {% for r in rows %}
+        <tr>
+          <td class="text-muted">{{ forloop.counter }}</td>
+          <td><a href="{% url 'journal:student_progress' r.student.pk %}" class="text-decoration-none fw-semibold">{{ r.student.full_name }}</a></td>
+          <td>{{ r.student.group.name }}</td>
+          <td class="text-muted small">{{ r.student.specialty.code }}</td>
+          <td class="text-center">
+            {% if r.avg_grade and r.avg_grade < 3.5 %}<span class="badge bg-danger">{{ r.avg_grade }}</span>
+            {% elif r.avg_grade %}<span class="badge bg-secondary">{{ r.avg_grade }}</span>
+            {% else %}<span class="text-muted">—</span>{% endif %}
+          </td>
+          <td class="text-center">
+            {% if r.attendance_percent and r.attendance_percent < 60 %}<span class="badge bg-danger">{{ r.attendance_percent }}%</span>
+            {% elif r.attendance_percent %}<span class="badge bg-secondary">{{ r.attendance_percent }}%</span>
+            {% else %}<span class="text-muted">—</span>{% endif %}
+          </td>
+          <td class="text-center">
+            {% if r.avg_grade and r.avg_grade < 3.5 %}<span class="badge bg-warning text-dark">Балл</span>{% endif %}
+            {% if r.attendance_percent and r.attendance_percent < 60 %}<span class="badge bg-warning text-dark">Посещаемость</span>{% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="7" class="text-center text-muted py-4">🎉 Отстающих студентов нет</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

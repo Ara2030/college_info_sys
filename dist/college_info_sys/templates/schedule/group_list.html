@@ -1,0 +1,61 @@
+{% extends 'contingent/base.html' %}
+{% block title %}Расписание занятий{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h1 class="h3 mb-0">Расписание учебных занятий</h1>
+  <div class="d-flex gap-2">
+    <a href="{% url 'schedule:build' %}" class="btn btn-primary">⚙ Автопостроение</a>
+    <a href="{% url 'schedule:entry_create' %}" class="btn btn-outline-primary">+ Занятие</a>
+    <a href="{% url 'schedule:conflicts' %}" class="btn {% if conflicts %}btn-outline-danger{% else %}btn-outline-success{% endif %}">
+      ⚠ Конфликты{% if conflicts %} ({{ conflicts }}){% endif %}
+    </a>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card p-3">
+      <h6 class="text-primary mb-3">Расписание по группам</h6>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead><tr><th>Группа</th><th>Специальность</th><th class="text-center">Занятий</th><th class="text-end"></th></tr></thead>
+          <tbody>
+            {% for g in groups %}
+            <tr>
+              <td class="fw-semibold">{{ g.name }}</td>
+              <td class="text-muted small">{{ g.specialty.code }} · {{ g.specialty.name|truncatechars:40 }}</td>
+              <td class="text-center"><span class="badge bg-light text-dark">{{ g.entries_count }}</span></td>
+              <td class="text-end">
+                <a href="{% url 'schedule:group_schedule' g.pk %}" class="btn btn-sm btn-outline-primary">Расписание</a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center text-muted py-4">Групп нет</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card p-3 mb-3">
+      <h6 class="text-primary mb-3">Преподаватели</h6>
+      <div class="list-group list-group-flush">
+        {% for t in teachers %}
+        <a href="{% url 'schedule:teacher_schedule' t.pk %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+          {{ t.short_name }}<span class="text-muted small">{{ t.position|default:'' }}</span>
+        </a>
+        {% empty %}
+        <p class="text-muted small mb-0">Преподаватели не добавлены</p>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="card p-3">
+      <h6 class="text-primary mb-3">Аудитории ({{ rooms|length }})</h6>
+      <div class="d-flex flex-wrap gap-1">
+        {% for r in rooms %}<span class="badge bg-light text-dark border">{{ r.name }}</span>{% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

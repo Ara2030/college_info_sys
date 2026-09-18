@@ -1,0 +1,32 @@
+{% extends 'contingent/base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">{% if object %}Родитель — {{ object.full_name }}{% else %}Новый родитель / законный представитель{% endif %}</h3>
+  <a href="{% url 'contingent:parent_list' %}" class="btn btn-outline-secondary">← Родители</a>
+</div>
+
+<form method="post">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  <div class="card p-4 mb-3" style="max-width:820px;">
+    <div class="row g-3">
+      <div class="col-md-8">{% include 'contingent/_field.html' with field=form.student %}</div>
+      <div class="col-md-4">{% include 'contingent/_field.html' with field=form.relation %}</div>
+      <div class="col-md-4">{% include 'contingent/_field.html' with field=form.last_name %}</div>
+      <div class="col-md-4">{% include 'contingent/_field.html' with field=form.first_name %}</div>
+      <div class="col-md-4">{% include 'contingent/_field.html' with field=form.middle_name %}</div>
+      <div class="col-md-4">{% include 'contingent/_field.html' with field=form.birth_date %}</div>
+      <div class="col-md-4">{% include 'contingent/_field.html' with field=form.phone %}</div>
+      <div class="col-md-4">{% include 'contingent/_field.html' with field=form.email %}</div>
+      <div class="col-md-4">{% include 'contingent/_field.html' with field=form.passport_series %}</div>
+      <div class="col-md-4">{% include 'contingent/_field.html' with field=form.passport_number %}</div>
+      <div class="col-md-4">{% include 'contingent/_field.html' with field=form.workplace %}</div>
+      <div class="col-12">{% include 'contingent/_field.html' with field=form.address %}</div>
+    </div>
+  </div>
+  <div class="d-flex gap-2">
+    <button type="submit" class="btn btn-primary">Сохранить</button>
+    <a href="{% url 'contingent:parent_list' %}" class="btn btn-outline-secondary">Отмена</a>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends 'contingent/base.html' %}
+{% block title %}Ведомость — {{ exam }}{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h3 class="mb-0">
+    {% if exam.is_exam %}Экзамен{% else %}Зачёт{% endif %}: {{ exam.subject.name }}
+    <span class="badge bg-primary">{{ exam.group.name }}</span>
+  </h3>
+  <div class="d-flex gap-2">
+    <a href="{% url 'attestation:exam_print' exam.pk %}" class="btn btn-outline-secondary">🖨 Печать ведомости</a>
+    <a href="{% url 'attestation:exam_update' exam.pk %}" class="btn btn-outline-secondary">Изменить</a>
+  </div>
+</div>
+
+<div class="card p-3 mb-3">
+  <div class="row text-center">
+    <div class="col"><div class="text-muted small">Дата</div><div class="fw-semibold">{{ exam.date|date:'d.m.Y' }}</div></div>
+    <div class="col"><div class="text-muted small">Время</div><div class="fw-semibold">{{ exam.time|time:'H:i'|default:'—' }}</div></div>
+    <div class="col"><div class="text-muted small">Аудитория</div><div class="fw-semibold">{{ exam.room|default:'—' }}</div></div>
+    <div class="col"><div class="text-muted small">Преподаватель</div><div class="fw-semibold">{{ exam.teacher|default:'—' }}</div></div>
+    <div class="col"><div class="text-muted small">Форма</div><div class="fw-semibold">{{ exam.form|default:'—' }}</div></div>
+    <div class="col"><div class="text-muted small">Студентов</div><div class="fw-semibold">{{ student_count }}</div></div>
+  </div>
+</div>
+
+<div class="card p-4">
+  <h6 class="text-primary mb-3">Экзаменационная ведомость — внесение результатов</h6>
+  <form method="post">
+    {% csrf_token %}
+    {{ results_formset.management_form }}
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead><tr><th>№</th><th>Студент</th><th>Результат</th><th class="text-center">Явился</th></tr></thead>
+        <tbody>
+        {% for f in results_formset %}
+          {{ f.id }}
+          {{ f.student }}
+          <tr>
+            <td class="text-muted">{{ forloop.counter }}</td>
+            <td style="min-width:220px">{{ f.student_name }}</td>
+            <td style="min-width:200px">{{ f.grade }}</td>
+            <td class="text-center">{{ f.present }}</td>
+          </tr>
+          {% if f.errors %}<tr><td colspan="4" class="text-danger small">{{ f.errors }}</td></tr>{% endif %}
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="mt-3 d-flex gap-2">
+      <button type="submit" class="btn btn-primary">Сохранить результаты</button>
+      <span class="text-muted small align-self-center">
+        При оценках 2 / «не зачтено» / неявке автоматически создаётся академическая задолженность
+      </span>
+    </div>
+  </form>
+</div>
+{% endblock %}

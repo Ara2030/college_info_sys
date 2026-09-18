@@ -1,0 +1,54 @@
+{% extends 'contingent/base.html' %}
+{% block title %}Автопостроение расписания{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">Автоматическое составление расписания</h3>
+  <a href="{% url 'schedule:group_list' %}" class="btn btn-outline-secondary">← Портал</a>
+</div>
+
+<div class="alert alert-info small">
+  Расписание строится по <b>учебному плану</b> (дисциплины, распределённые по
+  преподавателям, с количеством часов в неделю). Для каждого часа алгоритм
+  ищет свободный слот: группа не занята, преподаватель не занят и доступен,
+  находится свободная аудитория. Конфликты исключены автоматически.
+</div>
+
+<form method="post">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  <div class="card p-4 mb-3" style="max-width:640px;">
+    <div class="row g-3">
+      <div class="col-md-6">{% include 'contingent/_field.html' with field=form.group %}</div>
+      <div class="col-md-3">{% include 'contingent/_field.html' with field=form.semester %}</div>
+      <div class="col-md-3">{% include 'contingent/_field.html' with field=form.week_type %}</div>
+    </div>
+  </div>
+  <div class="d-flex gap-2">
+    <button type="submit" class="btn btn-primary">Построить расписание</button>
+    <a href="{% url 'schedule:group_list' %}" class="btn btn-outline-secondary">Отмена</a>
+  </div>
+</form>
+
+<div class="card p-3 mt-4">
+  <h6 class="text-primary mb-3">Учебный план ({{ curriculum|length }} пунктов)</h6>
+  <div class="table-responsive">
+    <table class="table table-sm mb-0">
+      <thead><tr><th>Группа</th><th>Дисциплина</th><th>Преподаватель</th><th class="text-center">Ч/нед</th><th class="text-center">Семестр</th><th>Отчётность</th></tr></thead>
+      <tbody>
+        {% for c in curriculum %}
+        <tr>
+          <td class="fw-semibold">{{ c.group.name }}</td>
+          <td>{{ c.subject.name }}</td>
+          <td>{{ c.teacher.short_name }}</td>
+          <td class="text-center">{{ c.hours_per_week }}</td>
+          <td class="text-center">{{ c.semester }}</td>
+          <td>{% if c.exam_type == 'exam' %}<span class="badge bg-danger">Экзамен</span>{% else %}<span class="badge bg-info text-dark">Зачёт</span>{% endif %}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center text-muted py-3">Учебный план пуст — добавьте пункты в админке</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

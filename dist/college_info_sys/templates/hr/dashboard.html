@@ -1,0 +1,77 @@
+{% extends 'contingent/base.html' %}
+{% block title %}Кадровый учёт{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h1 class="h3 mb-0">Кадровый учёт</h1>
+  <div class="d-flex gap-2">
+    <a href="{% url 'hr:employee_create' %}" class="btn btn-primary">+ Сотрудник</a>
+    <a href="{% url 'hr:order_create' %}" class="btn btn-outline-primary">+ Приказ по личному составу</a>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="card shadow-sm text-center p-3">
+      <div class="display-6 fw-semibold text-primary">{{ active }}</div>
+      <div class="text-muted small">Работает (всего {{ total }})</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card shadow-sm text-center p-3">
+      <div class="display-6 fw-semibold text-success">{{ teachers }}</div>
+      <div class="text-muted small">Педагоги</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card shadow-sm text-center p-3">
+      <div class="display-6 fw-semibold text-info">{{ management }}</div>
+      <div class="text-muted small">АУП (руководство)</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card shadow-sm text-center p-3">
+      <div class="display-6 fw-semibold text-warning">{{ support }}</div>
+      <div class="text-muted small">Вспомогательный</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card p-3 mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="text-primary mb-0">Штатное расписание</h6>
+        <a href="{% url 'hr:staffing' %}" class="small">открыть →</a>
+      </div>
+      <table class="table table-sm mb-0">
+        <tr><td>Должностей в штатном расписании</td><td class="text-end fw-semibold">{{ positions }}</td></tr>
+        <tr><td>Вакантных ставок</td><td class="text-end fw-semibold">{{ vacancies }}</td></tr>
+      </table>
+    </div>
+    <div class="card p-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="text-primary mb-0">Тарификация</h6>
+        <a href="{% url 'hr:tarification_list' %}" class="small">открыть →</a>
+      </div>
+      <table class="table table-sm mb-0">
+        <tr><td>Периодов тарификации</td><td class="text-end fw-semibold">{{ tarification_count }}</td></tr>
+        <tr><td>Выгрузок в 1С:Зарплата</td><td class="text-end fw-semibold">{{ exports_count }}</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card p-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="text-primary mb-0">Приказы по личному составу</h6>
+        <a href="{% url 'hr:order_list' %}" class="small">открыть →</a>
+      </div>
+      <table class="table table-sm mb-0">
+        <tr><td>Всего приказов</td><td class="text-end fw-semibold">{{ orders_count }}</td></tr>
+        <tr><td>Карточек сотрудников (Т-2)</td><td class="text-end fw-semibold">{{ total }}</td></tr>
+      </table>
+      <a href="{% url 'hr:employee_list' %}" class="btn btn-sm btn-outline-primary mt-2">👥 Список сотрудников</a>
+      <a href="{% url 'hr:salary_create' %}" class="btn btn-sm btn-outline-secondary mt-2">📤 Выгрузка в 1С</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

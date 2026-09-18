@@ -1,0 +1,75 @@
+{% extends 'contingent/base.html' %}
+{% block title %}Отчёт по группе {{ group.name }}{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h3 class="mb-0">Отчёт о текущей успеваемости — {{ group.name }}</h3>
+  <div class="d-flex gap-2">
+    <a href="javascript:window.print()" class="btn btn-outline-secondary">🖨 Печать</a>
+    <a href="{% url 'journal:group_detail' group.pk %}" class="btn btn-outline-secondary">← Журнал</a>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-6 col-lg-3">
+    <div class="card shadow-sm text-center p-3">
+      <div class="display-6 fw-semibold text-primary">{{ report.students_total }}</div>
+      <div class="text-muted small">Студентов в группе</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card shadow-sm text-center p-3">
+      <div class="display-6 fw-semibold text-info">{{ report.group_avg|default:'—' }}</div>
+      <div class="text-muted small">Средний балл группы</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card shadow-sm text-center p-3">
+      <div class="display-6 fw-semibold text-success">{{ report.group_attendance|default:'—' }}%</div>
+      <div class="text-muted small">Посещаемость группы</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card shadow-sm text-center p-3">
+      <div class="display-6 fw-semibold {% if report.low_count %}text-danger{% else %}text-success{% endif %}">{{ report.low_count }}</div>
+      <div class="text-muted small">Отстающих (риск)</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>№</th><th>Студент</th><th class="text-center">Средний балл</th>
+          <th class="text-center">Посещаемость</th><th class="text-center">Оценок</th>
+          <th class="text-center">Статус</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for s in report.students %}
+        <tr>
+          <td class="text-muted">{{ forloop.counter }}</td>
+          <td><a href="{% url 'journal:student_progress' s.student.pk %}" class="text-decoration-none fw-semibold">{{ s.student.full_name }}</a></td>
+          <td class="text-center fw-semibold">
+            {% if s.avg_grade %}{{ s.avg_grade }}{% else %}<span class="text-muted">—</span>{% endif %}
+          </td>
+          <td class="text-center">
+            {% if s.attendance_percent %}{{ s.attendance_percent }}%{% else %}<span class="text-muted">—</span>{% endif %}
+          </td>
+          <td class="text-center">{{ s.grades_count }}</td>
+          <td class="text-center">
+            {% if s.is_low %}<span class="badge bg-danger">Низкая успеваемость</span>
+            {% else %}<span class="badge bg-success">Норма</span>{% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6" class="text-center text-muted py-4">В группе нет студентов</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+<p class="text-muted small mt-2 mb-0">Отчёт сформирован {{ report.generated_at|date:'d.m.Y' }}.
+  Критерий низкой успеваемости: посещаемость менее 60% или средний балл ниже 3,5.</p>
+{% endblock %}

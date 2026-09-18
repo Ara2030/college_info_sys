@@ -1,0 +1,49 @@
+{% extends 'contingent/base.html' %}
+{% block title %}Журнал интеграций{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h3 class="mb-0">Журнал интеграций</h3>
+  <a href="{% url 'reporting:dashboard' %}" class="btn btn-outline-secondary">← Отчётность</a>
+</div>
+
+<div class="card p-3 mb-3">
+  <form method="get" class="row g-2 align-items-end">
+    <div class="col-auto">
+      <label class="form-label small mb-1">Интеграция</label>
+      <select name="integration" class="form-select form-select-sm" onchange="this.form.submit()">
+        <option value="">Все</option>
+        <option value="registry_api" {% if selected_integration == 'registry_api' %}selected{% endif %}>REST API Реестра СПО</option>
+        <option value="smev" {% if selected_integration == 'smev' %}selected{% endif %}>СМЭВ</option>
+      </select>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead><tr><th>Время</th><th>Интеграция</th><th>Направление</th><th>Код</th><th>Статус</th><th>Данные</th><th>Ответ</th></tr></thead>
+      <tbody>
+        {% for l in logs %}
+        <tr>
+          <td class="text-nowrap">{{ l.created_at|date:'d.m.Y H:i' }}</td>
+          <td>{{ l.get_integration_display }}</td>
+          <td>{% if l.direction == 'out' %}→ исходящий{% else %}← входящий{% endif %}</td>
+          <td>{{ l.status_code|default:'—' }}</td>
+          <td>
+            {% if l.status == 'ok' %}<span class="badge bg-success">Успешно</span>
+            {% elif l.status == 'mock' %}<span class="badge bg-warning text-dark">Заглушка</span>
+            {% elif l.status == 'error' %}<span class="badge bg-danger">Ошибка</span>
+            {% else %}<span class="badge bg-secondary">Нет подключения</span>{% endif %}
+          </td>
+          <td class="text-muted small" style="max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ l.payload|truncatechars:60 }}</td>
+          <td class="text-muted small" style="max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ l.response|truncatechars:60 }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="text-center text-muted py-4">Журнал пуст</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

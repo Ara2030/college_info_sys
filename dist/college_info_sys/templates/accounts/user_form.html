@@ -1,0 +1,37 @@
+{% extends 'contingent/base.html' %}
+{% block title %}Новый пользователь{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">Новая учётная запись</h3>
+  <a href="{% url 'accounts:user_list' %}" class="btn btn-outline-secondary">← Пользователи</a>
+</div>
+
+<div class="alert alert-info small">
+  Для роли <b>Студент</b> выберите студента — он увидит свою успеваемость.
+  Для роли <b>Родитель</b> укажите ребёнка. Для <b>Преподавателя</b> —
+  сотрудника (появится расписание).
+</div>
+
+<form method="post">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  <div class="card p-4 mb-3" style="max-width:760px;">
+    <div class="row g-3">
+      <div class="col-md-6">{% include 'contingent/_field.html' with field=form.username %}</div>
+      <div class="col-md-6">{% include 'contingent/_field.html' with field=form.password %}</div>
+      <div class="col-md-6">{% include 'contingent/_field.html' with field=form.last_name %}</div>
+      <div class="col-md-6">{% include 'contingent/_field.html' with field=form.first_name %}</div>
+      <div class="col-md-6">{% include 'contingent/_field.html' with field=form.email %}</div>
+      <div class="col-md-6">{% include 'contingent/_field.html' with field=form.role %}</div>
+      <div class="col-12"><hr class="my-1"></div>
+      <div class="col-12">{% include 'contingent/_field.html' with field=form.employee %}</div>
+      <div class="col-12">{% include 'contingent/_field.html' with field=form.student %}</div>
+      <div class="col-12">{% include 'contingent/_field.html' with field=form.parent_of %}</div>
+    </div>
+  </div>
+  <div class="d-flex gap-2">
+    <button type="submit" class="btn btn-primary">Создать пользователя</button>
+    <a href="{% url 'accounts:user_list' %}" class="btn btn-outline-secondary">Отмена</a>
+  </div>
+</form>
+{% endblock %}

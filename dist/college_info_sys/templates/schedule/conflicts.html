@@ -1,0 +1,62 @@
+{% extends 'contingent/base.html' %}
+{% block title %}Проверка конфликтов расписания{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h3 class="mb-0">Контроль конфликтов расписания</h3>
+  <div class="d-flex gap-2">
+    <a href="{% url 'schedule:entry_create' %}" class="btn btn-primary">+ Занятие</a>
+    <a href="{% url 'schedule:group_list' %}" class="btn btn-outline-secondary">← Портал</a>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-6">
+    <div class="card shadow-sm text-center p-3">
+      <div class="display-6 fw-semibold text-primary">{{ total_entries }}</div>
+      <div class="text-muted small">Занятий в расписании</div>
+    </div>
+  </div>
+  <div class="col-6">
+    <div class="card shadow-sm text-center p-3">
+      <div class="display-6 fw-semibold {% if conflicts %}text-danger{% else %}text-success{% endif %}">{{ conflicts|length }}</div>
+      <div class="text-muted small">Занятий с конфликтами</div>
+    </div>
+  </div>
+</div>
+
+{% if conflicts %}
+<div class="alert alert-danger small">
+  Найдены конфликты. Откройте занятие и примените замену преподавателя/аудитории
+  или перенесите занятие (измените день/пару).
+</div>
+{% for entry, errors in conflicts %}
+<div class="card p-3 mb-3 border-danger">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div class="fw-semibold">
+      {{ entry.group.name }} · {{ entry.subject.name }} ·
+      {{ entry.day_name }} {{ entry.lesson_number }} пара ({{ entry.slot_time }})
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'schedule:entry_replace' entry.pk %}" class="btn btn-sm btn-primary">🔄 Заменить преподавателя/аудиторию</a>
+      <form method="post" action="{% url 'schedule:entry_publish' entry.pk %}" class="d-inline">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-sm btn-outline-secondary">
+          {% if entry.is_published %}Снять с публикации{% else %}Опубликовать{% endif %}
+        </button>
+      </form>
+    </div>
+  </div>
+  <div class="text-muted small mt-1">Преподаватель: {{ entry.teacher.short_name }} · Аудитория: {{ entry.room.name }}</div>
+  <ul class="text-danger small mt-2 mb-0">
+    {% for err in errors %}<li>{{ err }}</li>{% endfor %}
+  </ul>
+</div>
+{% endfor %}
+{% else %}
+<div class="card p-5 text-center">
+  <div class="display-4 mb-2">✅</div>
+  <h5>Конфликтов не обнаружено</h5>
+  <p class="text-muted mb-0">Все аудитории и преподаватели используются корректно.</p>
+</div>
+{% endif %}
+{% endblock %}

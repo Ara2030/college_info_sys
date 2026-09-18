@@ -1,0 +1,99 @@
+{% extends 'contingent/base.html' %}
+{% block title %}Журнал безопасности{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h3 class="mb-0">Журнал безопасности</h3>
+  <span class="text-muted small">Аудит действий и попытки входа</span>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="card shadow-sm text-center p-3">
+      <div class="display-6 fw-semibold text-danger">{{ failed_count }}</div>
+      <div class="text-muted small">Неудачных попыток входа</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card shadow-sm text-center p-3">
+      <div class="display-6 fw-semibold text-warning">{{ access_denied_count }}</div>
+      <div class="text-muted small">Отказов в доступе</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card shadow-sm text-center p-3">
+      <div class="display-6 fw-semibold text-danger">{{ lockout_count }}</div>
+      <div class="text-muted small">Блокировок (перебор)</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card shadow-sm text-center p-3">
+      <div class="display-6 fw-semibold text-primary">{{ logs|length }}</div>
+      <div class="text-muted small">Записей (последние 200)</div>
+    </div>
+  </div>
+</div>
+
+<div class="card p-3 mb-3">
+  <form method="get" class="row g-2 align-items-end">
+    <div class="col-auto">
+      <label class="form-label small mb-1">Действие</label>
+      <select name="action" class="form-select form-select-sm" onchange="this.form.submit()">
+        <option value="">Все</option>
+        {% for code, label in actions %}
+        <option value="{{ code }}" {% if selected_action == code %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </form>
+</div>
+
+<div class="card mb-3">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead><tr><th>Время</th><th>Пользователь</th><th>Действие</th><th>Описание</th><th>IP</th></tr></thead>
+      <tbody>
+        {% for l in logs %}
+        <tr>
+          <td class="text-nowrap">{{ l.created_at|date:'d.m.Y H:i:s' }}</td>
+          <td>{{ l.user.username|default:l.username|default:'—' }}</td>
+          <td>
+            {% if l.action == 'login_failed' or l.action == 'lockout' or l.action == 'access_denied' %}
+              <span class="badge bg-danger">{{ l.get_action_display }}</span>
+            {% elif l.action == 'login' or l.action == 'logout' %}
+              <span class="badge bg-info text-dark">{{ l.get_action_display }}</span>
+            {% else %}
+              <span class="badge bg-secondary">{{ l.get_action_display }}</span>
+            {% endif %}
+          </td>
+          <td class="text-muted small">{{ l.description|truncatechars:80 }}</td>
+          <td class="text-muted small">{{ l.ip_address|default:'—' }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-center text-muted py-4">Записей нет</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header bg-white fw-semibold">Последние попытки входа</div>
+  <div class="table-responsive">
+    <table class="table table-sm mb-0">
+      <thead><tr><th>Время</th><th>Логин</th><th>IP</th><th>Результат</th></tr></thead>
+      <tbody>
+        {% for a in attempts %}
+        <tr>
+          <td class="text-nowrap">{{ a.created_at|date:'d.m.Y H:i:s' }}</td>
+          <td>{{ a.username }}</td>
+          <td class="text-muted small">{{ a.ip_address|default:'—' }}</td>
+          <td>{% if a.success %}<span class="badge bg-success">Успешно</span>{% else %}<span class="badge bg-danger">Неудача</span>{% endif %}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="text-center text-muted py-3">Попыток не было</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

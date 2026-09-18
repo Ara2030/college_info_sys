@@ -1,0 +1,25 @@
+{% extends 'contingent/base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">{% if object %}Группа {{ object.name }}{% else %}Новая группа{% endif %}</h3>
+  <a href="{% url 'contingent:group_list' %}" class="btn btn-outline-secondary">← Назад</a>
+</div>
+
+<div class="card p-4" style="max-width:720px;">
+  <form method="post">
+    {% csrf_token %}
+    <div class="row">
+      <div class="col-md-6">{% include 'contingent/_field.html' with field=form.name %}</div>
+      <div class="col-md-6">{% include 'contingent/_field.html' with field=form.form_of_study %}</div>
+    </div>
+    {% include 'contingent/_field.html' with field=form.specialty %}
+    {% include 'contingent/_field.html' with field=form.department %}
+    <div class="row">
+      <div class="col-md-4">{% include 'contingent/_field.html' with field=form.course %}</div>
+      <div class="col-md-4">{% include 'contingent/_field.html' with field=form.enroll_year %}</div>
+      <div class="col-md-4">{% include 'contingent/_field.html' with field=form.curator %}</div>
+    </div>
+    <button type="submit" class="btn btn-primary">Сохранить</button>
+  </form>
+</div>
+{% endblock %}

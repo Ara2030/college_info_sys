@@ -1,0 +1,82 @@
+{% extends 'contingent/base.html' %}
+{% block title %}Карточка Т-2 — {{ employee.full_name }}{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h3 class="mb-0">Личная карточка работника (Т-2): {{ employee.full_name }}</h3>
+  <div class="d-flex gap-2">
+    <a href="{% url 'hr:employee_card' employee.pk %}" class="btn btn-outline-secondary">🖨 Печать Т-2</a>
+    <a href="{% url 'hr:employee_update' employee.pk %}" class="btn btn-primary">Изменить</a>
+    <a href="{% url 'hr:order_create' %}?employee={{ employee.pk }}" class="btn btn-outline-primary">+ Приказ</a>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card p-3">
+      <h6 class="text-primary mb-3">Общие сведения</h6>
+      <table class="table table-sm mb-0">
+        <tr><th class="text-muted fw-normal">ФИО</th><td>{{ employee.full_name }}</td></tr>
+        <tr><th class="text-muted fw-normal">Пол</th><td>{{ employee.gender|default:'—' }}</td></tr>
+        <tr><th class="text-muted fw-normal">Дата рождения</th><td>{{ employee.birth_date|date:'d.m.Y'|default:'—' }}</td></tr>
+        <tr><th class="text-muted fw-normal">Место рождения</th><td>{{ employee.birth_place|default:'—' }}</td></tr>
+        <tr><th class="text-muted fw-normal">Гражданство</th><td>{{ employee.citizenship }}</td></tr>
+        <tr><th class="text-muted fw-normal">СНИЛС</th><td>{{ employee.snils|default:'—' }}</td></tr>
+        <tr><th class="text-muted fw-normal">ИНН</th><td>{{ employee.inn|default:'—' }}</td></tr>
+        <tr><th class="text-muted fw-normal">Паспорт</th><td>{{ employee.passport_series }} {{ employee.passport_number }}{% if employee.passport_issued %}<br><small>{{ employee.passport_issued }}</small>{% endif %}</td></tr>
+        <tr><th class="text-muted fw-normal">Адрес</th><td>{{ employee.address|default:'—' }}</td></tr>
+        <tr><th class="text-muted fw-normal">Образование</th><td>{{ employee.education|default:'—' }}</td></tr>
+        <tr><th class="text-muted fw-normal">Семейное положение</th><td>{{ employee.family_status|default:'—' }}{% if employee.children_count %}, детей: {{ employee.children_count }}{% endif %}</td></tr>
+        <tr><th class="text-muted fw-normal">Воинский учёт</th><td>{{ employee.military|default:'—' }}</td></tr>
+      </table>
+    </div>
+    <div class="card p-3 mt-3">
+      <h6 class="text-primary mb-3">Приказы по личному составу</h6>
+      {% if orders %}
+      <table class="table table-sm mb-0">
+        {% for o in orders %}
+        <tr>
+          <td><a href="{% url 'hr:order_detail' o.pk %}" class="text-decoration-none">№{{ o.number }} от {{ o.date|date:'d.m.Y' }}</a></td>
+          <td>{{ o.get_order_type_display }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+      {% else %}<p class="text-muted small mb-0">Приказов нет</p>{% endif %}
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card p-3">
+      <h6 class="text-primary mb-3">Работа в колледже</h6>
+      <table class="table table-sm mb-0">
+        <tr><th class="text-muted fw-normal">Должность</th><td class="fw-semibold">{{ employee.position }}</td></tr>
+        <tr><th class="text-muted fw-normal">Категория</th><td>{{ employee.get_category_display }}</td></tr>
+        <tr><th class="text-muted fw-normal">Отделение</th><td>{{ employee.department|default:'—' }}</td></tr>
+        <tr><th class="text-muted fw-normal">Дата приёма</th><td>{{ employee.hire_date|date:'d.m.Y'|default:'—' }}</td></tr>
+        <tr><th class="text-muted fw-normal">Статус</th><td>{% if employee.status == 'active' %}<span class="badge bg-success">Работает</span>{% else %}<span class="badge bg-danger">Уволен {{ employee.dismissal_date|date:'d.m.Y' }}</span>{% endif %}</td></tr>
+        <tr><th class="text-muted fw-normal">Телефон</th><td>{{ employee.phone|default:'—' }}</td></tr>
+        <tr><th class="text-muted fw-normal">E-mail</th><td>{{ employee.email|default:'—' }}</td></tr>
+      </table>
+    </div>
+    <div class="card p-3 mt-3">
+      <h6 class="text-primary mb-3">Штатное расписание</h6>
+      {% if staffing %}
+      <table class="table table-sm mb-0">
+        {% for u in staffing %}
+        <tr><td>{{ u.position.title }}</td><td class="text-end">{{ u.rate }} ст.</td></tr>
+        {% endfor %}
+      </table>
+      {% else %}<p class="text-muted small mb-0">Не назначен на ставку</p>{% endif %}
+    </div>
+    <div class="card p-3 mt-3">
+      <h6 class="text-primary mb-3">Тарификация (нагрузка)</h6>
+      {% if tarification %}
+      <table class="table table-sm mb-0">
+        <thead><tr><th>Период</th><th>Дисциплина</th><th class="text-end">Часов в год</th></tr></thead>
+        {% for i in tarification %}
+        <tr><td>{{ i.period.name }}</td><td>{{ i.subject.name }}</td><td class="text-end">{{ i.total_hours }}</td></tr>
+        {% endfor %}
+      </table>
+      {% else %}<p class="text-muted small mb-0">Нагрузка не тарифицирована</p>{% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

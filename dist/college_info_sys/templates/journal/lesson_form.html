@@ -1,0 +1,72 @@
+{% extends 'contingent/base.html' %}
+{% block title %}Занятие — журнал{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">{% if object %}Занятие {{ object }}{% else %}Новое занятие{% endif %}</h3>
+  <a href="{% url 'journal:group_list' %}" class="btn btn-outline-secondary">← Журналы</a>
+</div>
+
+<form method="post">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  <div class="card p-4 mb-3" style="max-width:860px;">
+    <h6 class="text-primary mb-3">Реквизиты занятия</h6>
+    <div class="row g-3">
+      <div class="col-md-6">{% include 'contingent/_field.html' with field=form.subject %}</div>
+      <div class="col-md-6">{% include 'contingent/_field.html' with field=form.group %}</div>
+      <div class="col-md-3">{% include 'contingent/_field.html' with field=form.date %}</div>
+      <div class="col-md-3">{% include 'contingent/_field.html' with field=form.lesson_number %}</div>
+      <div class="col-md-6">{% include 'contingent/_field.html' with field=form.teacher %}</div>
+      <div class="col-12">{% include 'contingent/_field.html' with field=form.topic %}</div>
+    </div>
+  </div>
+
+  <div class="card p-4 mb-3">
+    <h6 class="text-primary mb-3">Отметки студентов группы
+      {% if students %}<span class="badge bg-secondary ms-1">{{ students|length }}</span>{% endif %}
+    </h6>
+    {% if students %}
+    {{ marks_formset.management_form }}
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead>
+          <tr><th>Студент</th><th>Оценка</th><th class="text-center">Присутствовал</th></tr>
+        </thead>
+        <tbody>
+        {% for f in marks_formset %}
+          {{ f.id }}
+          {{ f.student }}
+          <tr>
+            <td style="min-width:220px">{{ f.student_name }}</td>
+            <td style="min-width:130px">{{ f.value }}</td>
+            <td class="text-center">{{ f.present }}</td>
+          </tr>
+          {% if f.errors %}<tr><td colspan="3" class="text-danger small">{{ f.errors }}</td></tr>{% endif %}
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-muted mb-0">Сначала выберите группу — отметки появятся после выбора.</p>
+    {% endif %}
+  </div>
+
+  <div class="d-flex gap-2">
+    <button type="submit" class="btn btn-primary">Сохранить занятие</button>
+    <a href="{% url 'journal:group_list' %}" class="btn btn-outline-secondary">Отмена</a>
+  </div>
+</form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const groupSelect = document.querySelector('#id_group');
+  const subjectSelect = document.querySelector('#id_subject');
+  if (!groupSelect) return;
+  groupSelect.addEventListener('change', function () {
+    const url = new URL(window.location.href);
+    url.searchParams.set('group', this.value);
+    window.location.href = url.toString();
+  });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends 'contingent/base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">Печать приказа</h3>
+  <div class="d-flex gap-2">
+    <a href="javascript:window.print()" class="btn btn-outline-secondary">🖨 Печать</a>
+    <a href="{% url 'hr:order_detail' order.pk %}" class="btn btn-outline-secondary">← Назад</a>
+  </div>
+</div>
+
+<div class="card p-4">
+  <div class="text-center mb-4">
+    <div>ГБПОУ «Колледж»</div>
+    <div class="fw-semibold fs-5 mt-2">ПРИКАЗ</div>
+    <div>№ {{ order.number }} от {{ order.date|date:'d.m.Y' }}</div>
+  </div>
+  <div class="fw-semibold text-center mb-3">
+    {% if order.order_type == 'hire' %}О приёме на работу{% elif order.order_type == 'transfer' %}О переводе{% else %}Об увольнении{% endif %}
+  </div>
+  <p class="text-justify">В соответствии с трудовым законодательством приказываю:</p>
+  {% if order.order_type == 'hire' %}
+  <p>1. Принять <b>{{ order.employee.full_name }}</b> на должность
+    <b>{{ order.position|default:order.employee.position }}</b>
+    с {{ order.date|date:'d.m.Y' }} г.{% if order.basis %}<br>Основание: {{ order.basis }}.{% endif %}</p>
+  {% elif order.order_type == 'transfer' %}
+  <p>1. Перевести <b>{{ order.employee.full_name }}</b> на должность
+    <b>{{ order.position|default:order.employee.position }}</b>
+    с {{ order.date|date:'d.m.Y' }} г.{% if order.basis %}<br>Основание: {{ order.basis }}.{% endif %}</p>
+  {% else %}
+  <p>1. Уволить <b>{{ order.employee.full_name }}</b> с должности
+    <b>{{ order.position|default:order.employee.position }}</b>
+    с {{ order.date|date:'d.m.Y' }} г.{% if order.basis %}<br>Основание: {{ order.basis }}.{% endif %}</p>
+  {% endif %}
+  {% if order.text %}<p>{{ order.text }}</p>{% endif %}
+  <div class="mt-5 d-flex justify-content-between">
+    <div>Директор: ______________________</div>
+    <div>М.П.</div>
+  </div>
+</div>
+{% endblock %}

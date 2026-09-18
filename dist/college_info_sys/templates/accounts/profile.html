@@ -1,0 +1,49 @@
+{% extends 'contingent/base.html' %}
+{% block title %}Личный кабинет{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h3 class="mb-0">Личный кабинет</h3>
+  <div class="d-flex gap-2">
+    {% for r in roles %}<span class="badge bg-primary">{{ r }}</span>{% endfor %}
+  </div>
+</div>
+
+{% if mode == 'student' %}
+  {% include 'accounts/_student_card.html' with student=student avg_grade=avg_grade attendance_percent=attendance_percent is_low=is_low recent_grades=recent_grades %}
+{% elif mode == 'parent' %}
+  <div class="alert alert-info small">Вы авторизованы как <b>родитель</b> — доступна успеваемость ребёнка {{ child.full_name }}.</div>
+  {% include 'accounts/_student_card.html' with student=child avg_grade=avg_grade attendance_percent=attendance_percent is_low=is_low recent_grades=recent_grades %}
+{% elif mode == 'employee' %}
+  <div class="card p-4">
+    <h6 class="text-primary mb-3">Сведения о сотруднике</h6>
+    <table class="table table-sm mb-3">
+      <tr><th class="text-muted fw-normal" style="width:220px">ФИО</th><td>{{ employee.full_name }}</td></tr>
+      <tr><th class="text-muted fw-normal">Должность</th><td>{{ employee.position }}</td></tr>
+      <tr><th class="text-muted fw-normal">Отделение</th><td>{{ employee.department|default:'—' }}</td></tr>
+    </table>
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="{% url 'hr:employee_detail' employee.pk %}" class="btn btn-outline-primary">Моя карточка (Т-2)</a>
+      {% if has_teacher %}
+      <a href="{% url 'schedule:teacher_schedule' employee.teacher.pk %}" class="btn btn-outline-primary">Моё расписание ({{ entries_count }} занятий)</a>
+      {% endif %}
+      <a href="{% url 'journal:group_list' %}" class="btn btn-outline-secondary">Электронный журнал</a>
+    </div>
+  </div>
+{% else %}
+  <div class="card p-4">
+    <h6 class="text-primary mb-3">Панель сотрудника</h6>
+    {% if is_academic_staff or is_admin %}
+    <p class="text-muted small">У вас есть доступ к учебной части: контингент, журнал, аттестация, расписание, отчётность.</p>
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="{% url 'contingent:student_list' %}" class="btn btn-outline-primary">Студенты</a>
+      <a href="{% url 'journal:group_list' %}" class="btn btn-outline-primary">Журнал</a>
+      <a href="{% url 'attestation:exam_list' %}" class="btn btn-outline-primary">Аттестация</a>
+      <a href="{% url 'schedule:group_list' %}" class="btn btn-outline-primary">Расписание</a>
+      <a href="{% url 'reporting:dashboard' %}" class="btn btn-outline-primary">Отчётность</a>
+    </div>
+    {% else %}
+    <p class="text-muted small mb-0">Профиль не привязан к студенту или сотруднику. Обратитесь к администратору.</p>
+    {% endif %}
+  </div>
+{% endif %}
+{% endblock %}

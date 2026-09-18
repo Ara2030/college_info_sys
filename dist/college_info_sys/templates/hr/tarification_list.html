@@ -1,0 +1,36 @@
+{% extends 'contingent/base.html' %}
+{% block title %}Тарификация педагогической нагрузки{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h3 class="mb-0">Тарификация педагогической нагрузки</h3>
+  <a href="{% url 'hr:tarification_create' %}" class="btn btn-primary">+ Период тарификации</a>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead><tr><th>Период</th><th>Учебный год</th><th class="text-center">Строк</th><th class="text-center">Часов в год</th><th>Статус</th><th class="text-end">Действия</th></tr></thead>
+      <tbody>
+        {% for p in periods %}
+        <tr>
+          <td class="fw-semibold">{{ p.name }}</td>
+          <td>{{ p.year_start }}/{{ p.year_start|add:"1" }}</td>
+          <td class="text-center">{{ p.items.count }}</td>
+          <td class="text-center fw-semibold">{{ p.total_hours }}</td>
+          <td>
+            {% if p.status == 'approved' %}<span class="badge bg-success">Утверждена</span>
+            {% else %}<span class="badge bg-secondary">Черновик</span>{% endif %}
+          </td>
+          <td class="text-end">
+            <a href="{% url 'hr:tarification_detail' p.pk %}" class="btn btn-sm btn-outline-primary">Открыть</a>
+            <a href="{% url 'hr:salary_create' %}" class="btn btn-sm btn-outline-secondary">📤 в 1С</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center text-muted py-4">Периоды тарификации не созданы</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

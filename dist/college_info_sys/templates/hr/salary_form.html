@@ -1,0 +1,35 @@
+{% extends 'contingent/base.html' %}
+{% block title %}Формирование выгрузки в 1С{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">Сформировать выгрузку в «1С:Зарплата»</h3>
+  <a href="{% url 'hr:salary_list' %}" class="btn btn-outline-secondary">← Выгрузки</a>
+</div>
+
+<form method="post">
+  {% csrf_token %}
+  <div class="card p-4 mb-3" style="max-width:640px;">
+    <h6 class="text-primary mb-3">Выберите период тарификации</h6>
+    <table class="table table-sm">
+      <thead><tr><th></th><th>Период</th><th>Год</th><th class="text-center">Строк</th><th class="text-center">Часов</th></tr></thead>
+      <tbody>
+        {% for p in periods %}
+        <tr>
+          <td><input type="radio" name="period" value="{{ p.pk }}" class="form-check-input" {% if forloop.first %}checked{% endif %}></td>
+          <td class="fw-semibold">{{ p.name }}</td>
+          <td>{{ p.year_start }}/{{ p.year_start|add:"1" }}</td>
+          <td class="text-center">{{ p.items.count }}</td>
+          <td class="text-center">{{ p.total_hours }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-center text-muted py-3">Сначала создайте период тарификации</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="d-flex gap-2">
+    <button type="submit" class="btn btn-primary">Сформировать выгрузку</button>
+    <a href="{% url 'hr:salary_list' %}" class="btn btn-outline-secondary">Отмена</a>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends 'contingent/base.html' %}
+{% block title %}{{ report.get_report_type_display }} — {{ report.period_year }}{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h3 class="mb-0">{{ report.get_report_type_display }}
+    <span class="badge bg-primary">{{ report.period_year }}</span>
+  </h3>
+  <div class="d-flex gap-2">
+    <a href="{% url 'reporting:stat_excel' report.pk %}" class="btn btn-outline-success">⬇ Excel</a>
+    <a href="{% url 'reporting:stat_pdf' report.pk %}" class="btn btn-outline-danger">⬇ PDF</a>
+    <a href="{% url 'reporting:stat_list' %}" class="btn btn-outline-secondary">← Отчёты</a>
+  </div>
+</div>
+
+<div class="card p-3 mb-3">
+  <div class="row text-center">
+    <div class="col"><div class="text-muted small">Год</div><div class="fw-semibold">{{ report.period_year }}</div></div>
+    <div class="col"><div class="text-muted small">Дата среза</div><div class="fw-semibold">{{ report.period_date|date:'d.m.Y' }}</div></div>
+    <div class="col"><div class="text-muted small">Сформирован</div><div class="fw-semibold">{{ report.created_at|date:'d.m.Y H:i' }}</div></div>
+    <div class="col"><div class="text-muted small">Статус</div><div class="fw-semibold">{{ report.get_status_display }}</div></div>
+    <div class="col"><div class="text-muted small">SHA-256</div><div class="small text-muted">{{ report.checksum|slice:":16" }}…</div></div>
+  </div>
+</div>
+
+{% for section, values in data.items %}
+<div class="card p-3 mb-3">
+  <h6 class="text-primary mb-3">{{ section }}</h6>
+  {% if values.items %}
+  <table class="table table-sm mb-0">
+    <tbody>
+      {% for key, value in values.items %}
+      <tr>
+        <td>{{ key }}</td>
+        <td class="text-end fw-semibold">{{ value }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="text-muted small">{{ values }}</div>
+  {% endif %}
+</div>
+{% endfor %}
+{% endblock %}

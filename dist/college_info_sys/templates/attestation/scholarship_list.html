@@ -1,0 +1,40 @@
+{% extends 'contingent/base.html' %}
+{% block title %}Стипендиальные периоды{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h3 class="mb-0">Расчёт стипендий</h3>
+  <a href="{% url 'attestation:scholarship_create' %}" class="btn btn-primary">+ Сформировать список</a>
+</div>
+
+<div class="alert alert-info small">
+  <b>Право на стипендию</b> (по итогам промежуточной аттестации за период):
+  отсутствие академических задолженностей, отсутствие оценок 2 и 3, зачётов
+  «не зачтено» и неявок. Список формируется автоматически.
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead><tr><th>Период</th><th>Наименование</th><th class="text-center">Студентов</th><th>Статус</th><th class="text-end">Действия</th></tr></thead>
+      <tbody>
+        {% for p in periods %}
+        <tr>
+          <td class="text-nowrap">{{ p.period_start|date:'d.m.Y' }} — {{ p.period_end|date:'d.m.Y' }}</td>
+          <td class="fw-semibold">{{ p.name }}</td>
+          <td class="text-center"><span class="badge bg-primary">{{ p.students_count }}</span></td>
+          <td>
+            {% if p.status == 'approved' %}<span class="badge bg-success">Утверждён</span>
+            {% else %}<span class="badge bg-secondary">Черновик</span>{% endif %}
+          </td>
+          <td class="text-end">
+            <a href="{% url 'attestation:scholarship_detail' p.pk %}" class="btn btn-sm btn-outline-primary">Список</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-center text-muted py-4">Списки ещё не формировались</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

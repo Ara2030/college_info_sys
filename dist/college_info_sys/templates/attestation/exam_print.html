@@ -1,0 +1,42 @@
+{% extends 'contingent/base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">Экзаменационная ведомость</h3>
+  <div class="d-flex gap-2">
+    <a href="javascript:window.print()" class="btn btn-outline-secondary">🖨 Печать</a>
+    <a href="{% url 'attestation:exam_detail' exam.pk %}" class="btn btn-outline-secondary">← Назад</a>
+  </div>
+</div>
+
+<div class="card p-4">
+  <div class="text-center mb-4">
+    <div class="fw-semibold">ЭКЗАМЕНАЦИОННАЯ ВЕДОМОСТЬ</div>
+    <div class="mt-2">{% if exam.is_exam %}Экзамен{% else %}Зачёт{% endif %} по дисциплине
+      <b>{{ exam.subject.name }}</b></div>
+    <div>Группа: <b>{{ exam.group.name }}</b> · Дата: <b>{{ exam.date|date:'d.m.Y' }}</b>
+      · Время: {{ exam.time|time:'H:i'|default:'—' }} · Аудитория: {{ exam.room|default:'—' }}</div>
+    <div>Преподаватель: {{ exam.teacher|default:'____________________' }}</div>
+  </div>
+
+  <table class="table table-bordered align-middle">
+    <thead><tr><th class="text-center">№</th><th>ФИО студента</th><th class="text-center">Результат</th><th class="text-center">Подпись преподавателя</th></tr></thead>
+    <tbody>
+      {% for r in results %}
+      <tr>
+        <td class="text-center">{{ forloop.counter }}</td>
+        <td>{{ r.student.full_name }}</td>
+        <td class="text-center">
+          {% if r.grade == '2' or r.grade == 'fail' %}<b class="text-danger">{{ r.get_grade_display }}</b>
+          {% elif r.grade %}<b>{{ r.get_grade_display }}</b>
+          {% elif not r.present %}<span class="text-danger">Не явился</span>
+          {% else %}<span class="text-muted">—</span>{% endif %}
+        </td>
+        <td style="height:36px"></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4" class="text-center text-muted py-3">Результаты не внесены</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends 'contingent/base.html' %}
+{% block content %}
+<div class="card p-4" style="max-width:560px;">
+  <h4 class="mb-3">Удаление сведений о родителе</h4>
+  <p>Удалить сведения о <b>{{ object.full_name }}</b> ({{ object.get_relation_display }},
+    студент {{ object.student.full_name }})?</p>
+  <form method="post">
+    {% csrf_token %}
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-danger">Удалить</button>
+      <a href="{% url 'contingent:parent_list' %}" class="btn btn-outline-secondary">Отмена</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
