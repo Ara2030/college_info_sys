@@ -25,31 +25,122 @@ Write-Host "   ИНФОРМАЦИОННАЯ СИСТЕМА КОЛЛЕДЖА (С�
 Write-Host "============================================================" -ForegroundColor White
 Write-Host "   Проект: $ProjectRoot"
 
+# Целостность проекта: скрипт должен лежать внутри папки проекта
+if (-not (Test-Path -LiteralPath (Join-Path $ProjectRoot "manage.py"))) {
+    Fail "Не найден manage.py в папке проекта."
+    Write-Host "    Скопируйте папку проекта целиком (со скриптами) и запустите start.bat заново." -ForegroundColor Yellow
+    Read-Host "Нажмите Enter для выхода"; exit 1
+}
+
+# ---------------------------------------------------------------------------
+# Вспомогательные функции проверки Python
+# ---------------------------------------------------------------------------
+# venv считается рабочим, только если python.exe реально запускается.
+# Файл может существовать, но указывать на удалённый базовый Python —
+# тогда все вызовы молча падают и система "не запускается".
+function Test-PythonWorks {
+    param([string]$Path)
+    if (-not $Path -or -not (Test-Path -LiteralPath $Path)) { return $false }
+    try {
+        $out = & $Path -c "import sys; print('py-ok')" 2>&1
+        return ($LASTEXITCODE -eq 0 -and ("$out" -match 'py-ok'))
+    } catch {
+        return $false
+    }
+}
+
+# Ищем установленный базовый Python (3.10+) среди типовых мест установки.
+function Find-BasePython {
+    $found = @()
+    $patterns = @(
+        (Join-Path $env:LOCALAPPDATA "Programs\Python\Python3*\python.exe"),
+        "C:\Program Files\Python3*\python.exe",
+        "C:\Program Files (x86)\Python3*\python.exe",
+        "C:\Python3*\python.exe"
+    )
+    foreach ($p in $patterns) {
+        $found += Get-ChildItem $p -ErrorAction SilentlyContinue | Sort-Object FullName -Descending
+    }
+    $onPath = Get-Command python -ErrorAction SilentlyContinue
+    if ($onPath -and $onPath.Source -notlike "*WindowsApps*") { $found += (Get-Item $onPath.Source) }
+
+    foreach ($exe in $found) {
+        if (-not (Test-PythonWorks $exe.FullName)) { continue }
+        try {
+            $v = & $exe.FullName -c "import sys; print(sys.version_info[0]*100+sys.version_info[1])" 2>$null
+        } catch { continue }
+        if ($v -and [int]$v -ge 310) { return $exe.FullName }
+    }
+    return $null
+}
+
 # ---------------------------------------------------------------------------
 # 1. Виртуальное окружение
 # ---------------------------------------------------------------------------
 Step "1/7" "Проверка виртуального окружения"
-$venvPython = Join-Path $ProjectRoot ".venv\Scripts\python.exe"
+$venvDir = Join-Path $ProjectRoot ".venv"
+$venvPython = Join-Path $venvDir "Scripts\python.exe"
 
-if (-not (Test-Path -LiteralPath $venvPython)) {
-    Warn "Виртуальное окружение не найдено - создаю..."
-    $sysPython = (Get-Command python -ErrorAction SilentlyContinue).Source
+if (Test-PythonWorks $venvPython) {
+    $pyVer = & $venvPython -c "import sys; print('.'.join(map(str, sys.version_info[:3])))" 2>$null
+    Ok "Виртуальное окружение работает (Python $pyVer)"
+} else {
+    if (Test-Path -LiteralPath $venvPython) {
+        Warn "Виртуальное окружение повреждено: python.exe не запускается."
+        Warn "Причина: базовый Python удалён или перемещён. Пересоздаю окружение..."
+    } else {
+        Warn "Виртуальное окружение не найдено - создаю..."
+    }
+
+    $sysPython = Find-BasePython
     if (-not $sysPython) {
-        Fail "Python не найден в PATH. Установите Python 3.12+ и повторите."
+        Fail "Python 3.10+ не найден в системе."
+        Write-Host "    Установите его одной командой (без прав администратора):" -ForegroundColor Yellow
+        Write-Host '      winget install --id Python.Python.3.14 --exact --scope user' -ForegroundColor White
+        Write-Host "    либо скачайте с https://www.python.org/downloads/windows/" -ForegroundColor Yellow
+        Write-Host "    После установки запустите start.bat снова." -ForegroundColor Yellow
         Read-Host "Нажмите Enter для выхода"; exit 1
     }
-    & $sysPython -m venv (Join-Path $ProjectRoot ".venv")
-    if (-not (Test-Path -LiteralPath $venvPython)) {
+    Ok "Найден Python: $sysPython"
+
+    if (Test-Path -LiteralPath $venvDir) {
+        Write-Host "    Удаляю нерабочее окружение..."
+        Remove-Item -LiteralPath $venvDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
+    & $sysPython -m venv $venvDir
+    if (-not (Test-PythonWorks $venvPython)) {
         Fail "Не удалось создать виртуальное окружение."
+        Write-Host "    Проверьте, что Python установлен полностью (с модулем venv)." -ForegroundColor Yellow
         Read-Host "Нажмите Enter для выхода"; exit 1
     }
     Ok "Виртуальное окружение создано"
-    Write-Host "    Установка зависимостей (может занять минуту)..."
+
+    Write-Host "    Установка зависимостей (может занять 1-2 минуты)..."
     & $venvPython -m pip install --upgrade pip --quiet
     & $venvPython -m pip install -r (Join-Path $ProjectRoot "requirements.txt") --quiet
+    if ($LASTEXITCODE -ne 0) {
+        Fail "Не удалось установить зависимости из requirements.txt."
+        Write-Host "    Проверьте подключение к интернету и запустите снова." -ForegroundColor Yellow
+        Read-Host "Нажмите Enter для выхода"; exit 1
+    }
+    Ok "Зависимости установлены"
+}
+
+# Проверяем, что ключевые библиотеки на месте (venv мог сохраниться неполным)
+& $venvPython -c "import django, psycopg, openpyxl, reportlab, lxml, PIL" *> $null
+if ($LASTEXITCODE -ne 0) {
+    Warn "Часть зависимостей отсутствует - устанавливаю..."
+    & $venvPython -m pip install -r (Join-Path $ProjectRoot "requirements.txt") --quiet
+    & $venvPython -c "import django, psycopg, openpyxl, reportlab, lxml, PIL" *> $null
+    if ($LASTEXITCODE -ne 0) {
+        Fail "Зависимости не установились. Выполните вручную:"
+        Write-Host "      .venv\Scripts\python.exe -m pip install -r requirements.txt" -ForegroundColor White
+        Read-Host "Нажмите Enter для выхода"; exit 1
+    }
     Ok "Зависимости установлены"
 } else {
-    Ok "Виртуальное окружение найдено"
+    Ok "Зависимости на месте"
 }
 
 # ---------------------------------------------------------------------------
@@ -183,6 +274,20 @@ else:
 # 7. Запуск сервера
 # ---------------------------------------------------------------------------
 Step "7/7" "Запуск веб-сервера"
+
+# Если порт занят (например, сервер уже запущен) - берём следующий свободный
+function Test-PortFree {
+    param([int]$P)
+    return -not (Get-NetTCPConnection -LocalPort $P -State Listen -ErrorAction SilentlyContinue)
+}
+$requestedPort = $Port
+while (-not (Test-PortFree $Port) -and $Port -lt ($requestedPort + 10)) {
+    $Port++
+}
+if ($Port -ne $requestedPort) {
+    Warn "Порт $requestedPort занят - использую $Port"
+}
+
 $url = "http://127.0.0.1:$Port/"
 Write-Host ""
 Write-Host "============================================================" -ForegroundColor Green
@@ -202,3 +307,9 @@ if (-not $NoBrowser) {
 }
 
 & $venvPython manage.py runserver "127.0.0.1:$Port"
+$serverExit = $LASTEXITCODE
+Remove-Job -State Completed -ErrorAction SilentlyContinue
+if ($serverExit -ne 0) {
+    Fail "Веб-сервер завершился с кодом $serverExit (см. сообщения выше)."
+}
+exit $serverExit

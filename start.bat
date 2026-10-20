@@ -1,30 +1,33 @@
 @echo off
-REM ===========================================================================
-REM  College Information System - one-click launcher
-REM  Checks environment, prepares the database and starts the server.
-REM ===========================================================================
 chcp 65001 > nul
-title College IS - starting
+title Информационная система колледжа - запуск
+REM ===========================================================================
+REM  ИС колледжа (СПО) - запуск одним кликом.
+REM  Проверяет окружение, готовит базу данных и запускает сервер.
+REM  Параметры: -Port 8080  -NoBrowser  -SkipDemo
+REM ===========================================================================
 echo ============================================================
-echo   College Information System - start
+echo   Информационная система колледжа - запуск
 echo ============================================================
 echo.
 
-REM �஢�ઠ ������ PowerShell
 where powershell > nul 2>&1
-if errorlevel 1 (
-    echo [ERROR] PowerShell not found in PATH
-    pause
-    exit /b 1
-)
+if errorlevel 1 goto nops
 
-REM ����� �᭮����� �ਯ�
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\start.ps1" %*
-set EXITCODE=%ERRORLEVEL%
+set "EXITCODE=%ERRORLEVEL%"
 
-if not "%EXITCODE%"=="0" (
-    echo.
-    echo [ERROR] start.ps1 exited with code %EXITCODE%
-    echo Check the messages above.
-    pause
-)
+if not "%EXITCODE%"=="0" goto failed
+goto end
+
+:nops
+echo [ОШИБКА] PowerShell не найден в PATH.
+pause
+exit /b 1
+
+:failed
+echo.
+echo [ОШИБКА] Запуск прерван, код %EXITCODE%. Смотрите сообщения выше.
+pause
+
+:end
