@@ -36,3 +36,6 @@ installer/payload/app/
 installer/payload/deps/
 installer/payload/wheels/
 installer/payload/db/
+
+# Флаг очистки демо-данных (локальное состояние)
+.demo_disabled

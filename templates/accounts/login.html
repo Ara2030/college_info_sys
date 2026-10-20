@@ -19,6 +19,14 @@
     <div class="text-muted small">Информационная система колледжа (СПО)</div>
   </div>
 
+  {% if messages %}
+  {% for message in messages %}
+  <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'success' %}success{% elif message.tags == 'warning' %}warning{% else %}info{% endif %} py-2 small">
+    {{ message }}
+  </div>
+  {% endfor %}
+  {% endif %}
+
   {% if lockout %}
   <div class="alert alert-danger py-2 small">
     <b>Вход временно заблокирован.</b><br>
@@ -62,6 +70,39 @@
       {% endfor %}
     </div>
   </div>
+
+  <details class="mt-3">
+    <summary class="text-muted small" style="cursor:pointer">Очистка демо-данных</summary>
+    {% if demo_clear_available %}
+    <form method="post" action="{% url 'accounts:clear_demo_data' %}" class="mt-2 p-3 border rounded bg-light">
+      {% csrf_token %}
+      <div class="small text-danger mb-2">
+        Будут удалены студенты, группы, приказы, журнал, аттестация, расписание,
+        кадры и отчёты. Пользователи и журнал аудита сохраняются. Действие необратимо.
+      </div>
+      <input name="admin_username" class="form-control form-control-sm mb-2" value="admin"
+             placeholder="Логин администратора" autocomplete="username" required>
+      <input name="admin_password" type="password" class="form-control form-control-sm mb-2"
+             placeholder="Пароль администратора" autocomplete="current-password" required>
+      <input name="confirm_word" class="form-control form-control-sm mb-2"
+             placeholder="Введите слово УДАЛИТЬ" required>
+      <button type="submit" class="btn btn-outline-danger btn-sm w-100"
+              onclick="return confirm('Удалить все демонстрационные данные? Отменить это действие нельзя.')">
+        🗑 Очистить демо-данные
+      </button>
+    </form>
+    {% else %}
+    <div class="mt-2 p-3 border rounded bg-light">
+      <div class="small text-muted mb-2">
+        Демо-данные уже удалены — в базе нет учебных записей.
+        Автозаполнение демо-данными при запуске отключено.
+      </div>
+      <button type="button" class="btn btn-outline-secondary btn-sm w-100" disabled>
+        ✓ Демо-данные удалены
+      </button>
+    </div>
+    {% endif %}
+  </details>
   {% endif %}
 
   <div class="text-muted small mt-3 text-center">

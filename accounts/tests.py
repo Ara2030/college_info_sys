@@ -3,7 +3,7 @@
 from datetime import timedelta
 
 from django.contrib.auth.models import Group, User
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -185,3 +185,99 @@ class SecurityHeadersTests(TestCase):
     def test_frame_denied_in_csp(self):
         response = self.client.get(reverse('accounts:login'))
         self.assertIn("frame-ancestors 'none'", response.headers['Content-Security-Policy'])
+
+
+@override_settings(DEBUG=True)
+class ClearDemoDataTests(TestCase):
+    """Очистка демо-данных со страницы входа."""
+
+    def setUp(self):
+        import tempfile
+        from django.test import override_settings
+        self.base_dir = tempfile.mkdtemp(prefix='college_test_')
+        self._settings = override_settings(BASE_DIR=self.base_dir)
+        self._settings.enable()
+        self.addCleanup(self._settings.disable)
+
+        import shutil
+        self.addCleanup(shutil.rmtree, self.base_dir, True)
+
+        self.admin = User.objects.create_superuser('root', 'root@example.ru', 'RootPass123')
+        self.dep = Department.objects.create(name='ИТ', code='ИТ')
+        spec = Specialty.objects.create(code='09.02.07', name='ИСП', department=self.dep)
+        self.group = StudyGroup.objects.create(name='ИС-71', specialty=spec, department=self.dep,
+                                               course=1, enroll_year=2025)
+
+    def _post(self, **overrides):
+        data = {
+            'admin_username': 'root',
+            'admin_password': 'RootPass123',
+            'confirm_word': 'УДАЛИТЬ',
+        }
+        data.update(overrides)
+        return self.client.post(reverse('accounts:clear_demo_data'), data)
+
+    def test_link_visible_on_login_page(self):
+        response = self.client.get(reverse('accounts:login'))
+        self.assertContains(response, 'Очистка демо-данных')
+
+    def test_get_not_allowed(self):
+        response = self.client.get(reverse('accounts:clear_demo_data'))
+        self.assertEqual(response.status_code, 405)
+
+    def test_wrong_password_keeps_data(self):
+        response = self._post(admin_password='wrong')
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(Department.objects.exists())
+        self.assertTrue(AuditLog.objects.filter(
+            action=AuditLog.Action.ACCESS_DENIED,
+            description__contains='Очистка демо-данных').exists())
+
+    def test_not_superuser_rejected(self):
+        User.objects.create_user('director', password='DirectorPass1')
+        self._post(admin_username='director', admin_password='DirectorPass1')
+        self.assertTrue(Department.objects.exists())
+
+    def test_wrong_confirm_word_keeps_data(self):
+        self._post(confirm_word='удалить все')
+        self.assertTrue(Department.objects.exists())
+
+    def test_clear_with_admin_credentials(self):
+        response = self._post()
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Department.objects.exists())
+        self.assertFalse(StudyGroup.objects.exists())
+        # пользователи и аудит сохраняются
+        self.assertTrue(User.objects.filter(pk=self.admin.pk).exists())
+        self.assertTrue(AuditLog.objects.filter(action=AuditLog.Action.DELETE).exists())
+        # автозаполнение отключается файлом-флагом
+        import os
+        self.assertTrue(os.path.exists(os.path.join(self.base_dir, '.demo_disabled')))
+
+    def test_disabled_when_not_debug(self):
+        from django.test import override_settings
+        with override_settings(DEBUG=False):
+            response = self.client.post(reverse('accounts:clear_demo_data'), {
+                'admin_username': 'root', 'admin_password': 'RootPass123',
+                'confirm_word': 'УДАЛИТЬ'})
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(Department.objects.exists())
+
+    def test_button_disabled_after_clear(self):
+        self._post()
+        page = self.client.get(reverse('accounts:login'))
+        self.assertContains(page, 'Демо-данные удалены')
+        self.assertContains(page, 'disabled')
+        self.assertNotContains(page, 'action="/accounts/login/clear-demo/"')
+
+    def test_second_clear_reports_nothing_to_clear(self):
+        self._post()
+        response = self.client.post(reverse('accounts:clear_demo_data'), {
+            'admin_username': 'root', 'admin_password': 'RootPass123',
+            'confirm_word': 'УДАЛИТЬ'}, follow=True)
+        self.assertContains(response, 'очищать нечего')
+
+    def test_button_active_when_data_present(self):
+        page = self.client.get(reverse('accounts:login'))
+        self.assertContains(page, 'action="/accounts/login/clear-demo/"')
+        self.assertNotContains(page, 'Демо-данные удалены')

@@ -262,7 +262,12 @@ $env:DB_PASSWORD = $savedPwd
 # 6. Демонстрационные данные и администратор
 # ---------------------------------------------------------------------------
 Step "6/7" "Проверка данных и учётных записей"
-if (-not $SkipDemo) {
+# Файл .demo_disabled создаётся после очистки демо-данных на странице входа:
+# пока он есть, автозаполнение не выполняется (в базе реальные данные).
+$demoLock = Join-Path $ProjectRoot ".demo_disabled"
+if (Test-Path -LiteralPath $demoLock) {
+    Ok "Демо-данные отключены (.demo_disabled) - автозаполнение пропущено"
+} elseif (-not $SkipDemo) {
     $studentCount = (& $venvPython -c @"
 import os, django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE','config.settings')

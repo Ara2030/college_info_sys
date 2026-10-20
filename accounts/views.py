@@ -18,6 +18,7 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.utils import timezone
+from django.views import View
 from django.views.generic import (CreateView, DeleteView, ListView, TemplateView,
                                   UpdateView)
 
@@ -57,7 +58,11 @@ class AppLoginView(LoginView):
         ctx = super().get_context_data(**kwargs)
         # Кнопки быстрого входа показываем только в режиме отладки (демонстрация)
         if settings.DEBUG:
+            from .management.commands.clear_demo_data import demo_data_present
+
             ctx['demo_accounts'] = self.DEMO_ACCOUNTS
+            # Кнопка очистки активна, только пока в базе есть что удалять
+            ctx['demo_clear_available'] = demo_data_present()
         return ctx
 
     def post(self, request, *args, **kwargs):
@@ -96,6 +101,91 @@ class AppLoginView(LoginView):
 
 class AppLogoutView(LogoutView):
     next_page = '/accounts/login/'
+
+
+class ClearDemoDataView(View):
+    """Очистка демонстрационных данных прямо со страницы входа.
+
+    Защита: доступно только при DEBUG=True, требует логина и пароля
+    администратора (суперпользователя), слова-подтверждения «УДАЛИТЬ»
+    и подчиняется общему лимиту попыток входа.
+    """
+    http_method_names = ['post']
+    CONFIRM_WORD = 'УДАЛИТЬ'
+
+    def post(self, request, *args, **kwargs):
+        from datetime import timedelta
+
+        from django.contrib.auth import authenticate
+
+        from .management.commands.clear_demo_data import (
+            clear_domain_data, demo_data_present, disable_demo_autofill)
+
+        if not settings.DEBUG:
+            messages.error(request, 'Очистка демо-данных доступна только в режиме отладки.')
+            return redirect('accounts:login')
+
+        username = (request.POST.get('admin_username') or '').strip()
+        password = request.POST.get('admin_password') or ''
+        confirm_word = (request.POST.get('confirm_word') or '').strip().upper()
+        ip = get_client_ip(request)
+
+        if confirm_word != self.CONFIRM_WORD:
+            messages.error(request, 'Не подтверждено: введите слово УДАЛИТЬ. Данные не изменены.')
+            return redirect('accounts:login')
+
+        # Тот же лимит попыток, что и при обычном входе
+        window = timezone.now() - timedelta(minutes=settings.LOGIN_ATTEMPTS_WINDOW)
+        fails = LoginAttempt.objects.filter(
+            success=False, created_at__gte=window,
+        ).filter(Q(username=username) | Q(ip_address=ip)).count()
+        if fails >= settings.LOGIN_ATTEMPTS_LIMIT:
+            AuditLog.objects.create(
+                username=username, action=AuditLog.Action.LOCKOUT,
+                description='Очистка демо-данных: превышен лимит попыток входа',
+                ip_address=ip, path=request.path, method='POST',
+                user_agent=request.META.get('HTTP_USER_AGENT', '')[:300])
+            messages.error(request, 'Слишком много неудачных попыток. Повторите позже.')
+            return redirect('accounts:login')
+
+        user = authenticate(request, username=username, password=password)
+        is_admin = bool(user and user.is_active and user.is_superuser)
+        LoginAttempt.objects.create(
+            username=username, ip_address=ip, success=is_admin,
+            user_agent=request.META.get('HTTP_USER_AGENT', '')[:300])
+
+        if not is_admin:
+            AuditLog.objects.create(
+                username=username, action=AuditLog.Action.ACCESS_DENIED,
+                description='Очистка демо-данных: неверный пароль администратора',
+                ip_address=ip, path=request.path, method='POST',
+                user_agent=request.META.get('HTTP_USER_AGENT', '')[:300])
+            messages.error(request, 'Неверный логин или пароль администратора — данные не изменены.')
+            return redirect('accounts:login')
+
+        if not demo_data_present():
+            messages.info(request, 'Демо-данных нет — очищать нечего.')
+            return redirect('accounts:login')
+
+        deleted = clear_domain_data()
+        total = sum(deleted.values())
+        disable_demo_autofill()
+
+        AuditLog.objects.create(
+            user=user, username=user.username, action=AuditLog.Action.DELETE,
+            description=f'Очистка демо-данных: удалено записей {total}',
+            object_type='demo_data', ip_address=ip, path=request.path,
+            method='POST', user_agent=request.META.get('HTTP_USER_AGENT', '')[:300])
+
+        if total:
+            messages.success(
+                request,
+                f'Демо-данные удалены: {total} записей. '
+                f'Автозаполнение при запуске отключено — система готова к вводу реальных данных.')
+        else:
+            messages.info(request, 'Демо-данных не найдено — база уже пуста.')
+        return redirect('accounts:login')
+
 
 
 class ProfileView(LoginRequiredMixin, TemplateView):
