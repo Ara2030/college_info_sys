@@ -413,6 +413,40 @@ powershell -ExecutionPolicy Bypass -File scripts\start.ps1
 .\scripts\start.ps1 -SkipDemo      # не заполнять демо-данные
 ```
 
+Скрипт восстанавливает окружение сам: если `python.exe` в `.venv` не запускается
+(например, удалили базовый Python) — пересоздаёт виртуальное окружение и ставит
+библиотеки из локального комплекта `_install\wheels` (интернет не нужен).
+Если занят порт — берёт следующий свободный.
+
+## Установщик для другого компьютера
+
+Собранный установщик: **`dist\installer\CollegeIS_Setup_1.0.0.exe`** (~405 МБ).
+Внутри — Python 3.14.7, PostgreSQL 17.11, библиотеки и дамп базы, поэтому
+интернет на целевой машине не требуется.
+
+```powershell
+# тихая установка (код возврата 0 — успех)
+CollegeIS_Setup_1.0.0.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART `
+  /DIR="C:\CollegeIS" /DBNAME=college_sys /APPROLE=college_app `
+  /LOG="C:\CollegeIS\setup.log"
+```
+
+Установщик ставит недостающие компоненты (если Python/PostgreSQL уже есть —
+использует их), создаёт роль `college_app` с правами только на данные,
+разворачивает дамп, собирает `.venv` офлайн, генерирует `.env`, создаёт ярлыки
+и запись в «Программы и компоненты». Пароли сохраняются в
+`C:\CollegeIS\logs\ДОСТУПЫ.txt`. Удаление программы базу не затрагивает.
+
+Пересборка установщика:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File installer\build_installer.ps1
+```
+
+Состав: `installer\college_is.iss` (мастер Inno Setup), `installer\payload\install_system.ps1`
+(настройка на целевой машине), `installer\assets\app.ico`. Подробно —
+`docs/УСТАНОВКА.md`.
+
 ## Простой вход (быстрый вход)
 
 На странице входа (`/accounts/login/`) в режиме отладки отображаются

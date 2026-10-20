@@ -28,3 +28,11 @@ staticfiles/
 .idea/
 .vscode/
 *.swp
+
+# Установщик: артефакты сборки (не хранить в репозитории)
+dist/installer/*.exe
+installer/cache/
+installer/payload/app/
+installer/payload/deps/
+installer/payload/wheels/
+installer/payload/db/

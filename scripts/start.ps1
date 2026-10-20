@@ -49,6 +49,21 @@ function Test-PythonWorks {
     }
 }
 
+# Ставит зависимости проекта. Если в комплекте установки есть локальные колёса
+# (_install\wheels) - работает офлайн, без интернета.
+function Install-Requirements {
+    param([string]$VenvPython, [string]$Root)
+    $pipArgs = @("-m", "pip", "install", "--quiet", "--disable-pip-version-check",
+                 "-r", (Join-Path $Root "requirements.txt"))
+    $wheels = Join-Path $Root "_install\wheels"
+    if (Test-Path -LiteralPath $wheels) {
+        $pipArgs += @("--no-index", "--find-links", $wheels)
+        Write-Host "    Использую локальный комплект библиотек (интернет не нужен)" -ForegroundColor Gray
+    }
+    & $VenvPython @pipArgs
+    return $LASTEXITCODE
+}
+
 # Ищем установленный базовый Python (3.10+) среди типовых мест установки.
 function Find-BasePython {
     $found = @()
@@ -118,8 +133,7 @@ if (Test-PythonWorks $venvPython) {
 
     Write-Host "    Установка зависимостей (может занять 1-2 минуты)..."
     & $venvPython -m pip install --upgrade pip --quiet
-    & $venvPython -m pip install -r (Join-Path $ProjectRoot "requirements.txt") --quiet
-    if ($LASTEXITCODE -ne 0) {
+    if ((Install-Requirements $venvPython $ProjectRoot) -ne 0) {
         Fail "Не удалось установить зависимости из requirements.txt."
         Write-Host "    Проверьте подключение к интернету и запустите снова." -ForegroundColor Yellow
         Read-Host "Нажмите Enter для выхода"; exit 1
@@ -131,7 +145,7 @@ if (Test-PythonWorks $venvPython) {
 & $venvPython -c "import django, psycopg, openpyxl, reportlab, lxml, PIL" *> $null
 if ($LASTEXITCODE -ne 0) {
     Warn "Часть зависимостей отсутствует - устанавливаю..."
-    & $venvPython -m pip install -r (Join-Path $ProjectRoot "requirements.txt") --quiet
+    Install-Requirements $venvPython $ProjectRoot | Out-Null
     & $venvPython -c "import django, psycopg, openpyxl, reportlab, lxml, PIL" *> $null
     if ($LASTEXITCODE -ne 0) {
         Fail "Зависимости не установились. Выполните вручную:"
@@ -222,10 +236,22 @@ if ($pgIsReady) {
 # 5. Миграции
 # ---------------------------------------------------------------------------
 Step "5/7" "Применение миграций базы данных"
+# Параметры администратора БД берём из .env (при установке пароль postgres задаётся)
+$adminUser = "postgres"
+$adminPwd = ""
+if (Test-Path -LiteralPath $envFile) {
+    foreach ($key in @("DB_ADMIN_USER", "DB_ADMIN_PASSWORD")) {
+        $line = Get-Content -LiteralPath $envFile | Where-Object { $_ -match "^$key=" } | Select-Object -First 1
+        if ($line) {
+            $value = ($line -split '=', 2)[1].Trim()
+            if ($key -eq "DB_ADMIN_USER") { $adminUser = $value } else { $adminPwd = $value }
+        }
+    }
+}
 $savedUser = $env:DB_USER
 $savedPwd  = $env:DB_PASSWORD
-$env:DB_USER = "postgres"     # миграции (DDL) выполняет владелец БД
-$env:DB_PASSWORD = ""
+$env:DB_USER = $adminUser     # миграции (DDL) выполняет владелец БД
+$env:DB_PASSWORD = $adminPwd
 & $venvPython manage.py migrate --noinput 2>&1 | Select-Object -Last 3
 if ($LASTEXITCODE -eq 0) { Ok "Миграции применены" }
 else { Warn "Миграции не применились (проверьте доступ к БД от владельца)." }
