@@ -2,6 +2,8 @@
 """Формы модуля «Промежуточная аттестация» (2.3)."""
 from django import forms
 
+from config.widgets import DateInput, TimeInput
+
 from contingent.models import Student
 from .models import Exam, ExamResult
 from .services import validate_exam_date
@@ -15,8 +17,8 @@ class ExamForm(forms.ModelForm):
         fields = ('subject', 'group', 'exam_type', 'date', 'time', 'room',
                   'teacher', 'form', 'note')
         widgets = {
-            'date': forms.DateInput(attrs={'type': 'date'}),
-            'time': forms.TimeInput(attrs={'type': 'time'}),
+            'date': DateInput(),
+            'time': TimeInput(),
             'room': forms.TextInput(attrs={'placeholder': 'Аудитория'}),
             'teacher': forms.TextInput(attrs={'placeholder': 'Фамилия И.О.'}),
             'note': forms.TextInput(attrs={'placeholder': 'Примечание'}),
@@ -76,7 +78,7 @@ class ScheduleBuildForm(forms.Form):
         label='Вид аттестации', initial='exam',
         widget=forms.Select(attrs={'class': 'form-select'}))
     start_date = forms.DateField(
-        label='Дата начала', widget=forms.DateInput(attrs={'type': 'date'}))
+        label='Дата начала', widget=DateInput())
     room = forms.CharField(label='Аудитория', required=False,
                            widget=forms.TextInput(attrs={'class': 'form-control'}))
     teacher = forms.CharField(label='Преподаватель', required=False,
@@ -94,9 +96,9 @@ class ScholarshipForm(forms.Form):
     """Формирование списка студентов на стипендию за период."""
 
     period_start = forms.DateField(
-        label='Период с', widget=forms.DateInput(attrs={'type': 'date'}))
+        label='Период с', widget=DateInput())
     period_end = forms.DateField(
-        label='Период по', widget=forms.DateInput(attrs={'type': 'date'}))
+        label='Период по', widget=DateInput())
 
     def clean(self):
         data = super().clean()

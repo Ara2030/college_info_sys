@@ -2,6 +2,8 @@
 """Формы модуля «Электронный журнал» (2.2)."""
 from django import forms
 
+from config.widgets import DateInput, TimeInput
+
 from contingent.models import Student
 from .models import Grade, Lesson
 
@@ -13,7 +15,7 @@ class LessonForm(forms.ModelForm):
         model = Lesson
         fields = ('subject', 'group', 'date', 'lesson_number', 'topic', 'teacher')
         widgets = {
-            'date': forms.DateInput(attrs={'type': 'date'}),
+            'date': DateInput(),
             'lesson_number': forms.NumberInput(attrs={'min': 1, 'max': 6}),
             'topic': forms.TextInput(attrs={'placeholder': 'Тема занятия'}),
             'teacher': forms.TextInput(attrs={'placeholder': 'Фамилия И.О.'}),

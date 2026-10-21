@@ -3,6 +3,8 @@ import re
 
 from django import forms
 
+from config.widgets import DateInput, TimeInput
+
 from .models import (Student, Group, Order, OrderItem, AcademicLeave,
                      StudentDocument, ParentInfo)
 
@@ -40,10 +42,10 @@ class StudentForm(BootstrapFormMixin, forms.ModelForm):
                   'social_card_number', 'social_card_issued',
                   'note')
         widgets = {
-            'birth_date': forms.DateInput(attrs={'type': 'date'}),
-            'enroll_date': forms.DateInput(attrs={'type': 'date'}),
-            'education_doc_date': forms.DateInput(attrs={'type': 'date'}),
-            'social_card_issued': forms.DateInput(attrs={'type': 'date'}),
+            'birth_date': DateInput(),
+            'enroll_date': DateInput(),
+            'education_doc_date': DateInput(),
+            'social_card_issued': DateInput(),
             'note': forms.Textarea(attrs={'rows': 3}),
         }
 
@@ -80,7 +82,7 @@ class OrderForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Order
         fields = ('number', 'date', 'order_type', 'title', 'comment')
-        widgets = {'date': forms.DateInput(attrs={'type': 'date'})}
+        widgets = {'date': DateInput()}
 
 
 class OrderItemForm(BootstrapFormMixin, forms.ModelForm):
@@ -105,8 +107,8 @@ class AcademicLeaveForm(BootstrapFormMixin, forms.ModelForm):
         model = AcademicLeave
         fields = ('student', 'order', 'date_from', 'date_to', 'reason', 'is_active')
         widgets = {
-            'date_from': forms.DateInput(attrs={'type': 'date'}),
-            'date_to': forms.DateInput(attrs={'type': 'date'}),
+            'date_from': DateInput(),
+            'date_to': DateInput(),
         }
 
 
@@ -115,7 +117,7 @@ class StudentDocumentForm(BootstrapFormMixin, forms.ModelForm):
         model = StudentDocument
         fields = ('doc_type', 'series', 'number', 'issue_date', 'issued_by',
                   'issue_code', 'is_main')
-        widgets = {'issue_date': forms.DateInput(attrs={'type': 'date'})}
+        widgets = {'issue_date': DateInput()}
 
 
 class ParentInfoForm(BootstrapFormMixin, forms.ModelForm):
@@ -124,4 +126,4 @@ class ParentInfoForm(BootstrapFormMixin, forms.ModelForm):
         fields = ('student', 'relation', 'last_name', 'first_name', 'middle_name',
                   'birth_date', 'phone', 'email', 'passport_series',
                   'passport_number', 'address', 'workplace')
-        widgets = {'birth_date': forms.DateInput(attrs={'type': 'date'})}
+        widgets = {'birth_date': DateInput()}

@@ -2,6 +2,8 @@
 """Формы модуля «Кадровый учёт» (2.5)."""
 from django import forms
 
+from config.widgets import DateInput, TimeInput
+
 from .models import Employee, HROrder, StaffPosition, TarificationPeriod, TarificationItem
 
 
@@ -18,10 +20,10 @@ class EmployeeForm(forms.ModelForm):
                   'education', 'phone', 'email', 'address',
                   'family_status', 'children_count', 'military', 'note')
         widgets = {
-            'birth_date': forms.DateInput(attrs={'type': 'date'}),
-            'passport_date': forms.DateInput(attrs={'type': 'date'}),
-            'hire_date': forms.DateInput(attrs={'type': 'date'}),
-            'dismissal_date': forms.DateInput(attrs={'type': 'date'}),
+            'birth_date': DateInput(),
+            'passport_date': DateInput(),
+            'hire_date': DateInput(),
+            'dismissal_date': DateInput(),
             'note': forms.Textarea(attrs={'rows': 3}),
         }
 
@@ -72,6 +74,6 @@ class HROrderForm(forms.ModelForm):
         model = HROrder
         fields = ('number', 'date', 'order_type', 'employee', 'position', 'basis', 'text')
         widgets = {
-            'date': forms.DateInput(attrs={'type': 'date'}),
+            'date': DateInput(),
             'text': forms.Textarea(attrs={'rows': 3}),
         }

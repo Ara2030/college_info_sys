@@ -2,7 +2,9 @@
 """Тесты модуля «Контингент студентов» (2.1)."""
 from datetime import date
 
+from django.contrib.auth.models import User
 from django.test import TestCase
+
 
 from .models import (Department, Specialty, Group, Student, StudentStatus,
                      ParentInfo, Order, OrderType, OrderItem, RegistryExport)
@@ -166,3 +168,28 @@ class StudentFormTests(ContingentBaseTestCase):
             'specialty': other_spec.pk, 'student_card_number': 'X-2',
             'enroll_date': '2025-09-01'})
         self.assertFalse(form.is_valid())
+
+
+class DateWidgetTests(ContingentBaseTestCase):
+    """Даты в <input type="date"> должны рендериться в ISO-формате.
+
+    Иначе браузер считает значение невалидным и очищает поле: обязательная дата
+    блокирует отправку формы (кнопка «Сохранить» не работает), необязательная —
+    молча теряется при сохранении.
+    """
+
+    def test_edit_form_renders_iso_date(self):
+        admin = User.objects.create_superuser('dateadmin', 'd@example.ru', 'DatePass123')
+        self.client.force_login(admin)
+        response = self.client.get(f'/students/{self.student.pk}/edit/')
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode()
+        self.assertIn('value="2007-05-15"', html)      # ISO, понятный браузеру
+        self.assertNotIn('value="15.05.2007"', html)   # русский формат ломал ввод
+
+    def test_create_form_renders_iso_date(self):
+        admin = User.objects.create_superuser('dateadmin2', 'd2@example.ru', 'DatePass123')
+        self.client.force_login(admin)
+        response = self.client.get('/students/new/')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('type="date"', response.content.decode())
