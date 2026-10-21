@@ -265,7 +265,11 @@ $envLines = @(
     "DB_ADMIN_PASSWORD=$adminPwd",
     "",
     "SECURE_SSL_REDIRECT=False",
-    "MASK_SENSITIVE_DATA=True"
+    "MASK_SENSITIVE_DATA=True",
+    "",
+    "# Обновления: адрес манифеста (можно сетевую папку) и автоустановка",
+    "UPDATE_URL=https://github.com/Ara2030/college_info_sys/releases/latest/download/version.json",
+    "UPDATE_AUTO=True"
 )
 [System.IO.File]::WriteAllText($envFile, ($envLines -join "`r`n") + "`r`n", (New-Object System.Text.UTF8Encoding($false)))
 if (-not (Test-Path -LiteralPath $envFile)) { Die "Не удалось создать .env" }

@@ -7,7 +7,8 @@
 param(
     [int]$Port = 8000,
     [switch]$NoBrowser,      # не открывать браузер
-    [switch]$SkipDemo        # не заполнять демо-данные
+    [switch]$SkipDemo,       # не заполнять демо-данные
+    [switch]$SkipUpdate      # не проверять обновления при старте
 )
 
 $ErrorActionPreference = "Continue"
@@ -186,6 +187,27 @@ MASK_SENSITIVE_DATA=True
     }
 } else {
     Ok ".env найден"
+}
+
+# ---------------------------------------------------------------------------
+# 2.5. Проверка обновлений (скачивает и устанавливает новую версию, если есть)
+# ---------------------------------------------------------------------------
+Step "2.5/7" "Проверка обновлений"
+if ($SkipUpdate) {
+    Ok "пропущено (-SkipUpdate)"
+} else {
+    $updater = Join-Path $PSScriptRoot "update.ps1"
+    if (-not (Test-Path -LiteralPath $updater)) {
+        Warn "модуль обновления не найден - пропускаю"
+    } else {
+        & $updater -ProjectRoot $ProjectRoot -Quiet
+        switch ($LASTEXITCODE) {
+            2 { Ok "система обновлена до новой версии" }
+            3 { Warn "есть обновление, автоустановка отключена (UPDATE_AUTO=False)" }
+            4 { Warn "обновление не удалось - работаю на текущей версии (logs\update.log)" }
+            default { }
+        }
+    }
 }
 
 # ---------------------------------------------------------------------------
